@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gering Farm Weather — Panhandle Ag Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --soil:       #2C1F0E;
+  --soil-mid:   #4A3420;
+  --soil-light: #7A5C3A;
+  --clay:       #B8895A;
+  --straw:      #E8C97A;
+  --wheat:      #F5E4B0;
+  --leaf:       #3B6B1A;
+  --leaf-mid:   #5A9128;
+  --leaf-light: #8DC050;
+  --sage:       #A8BC7A;
+  --sky:        #6B9EC5;
+  --sky-light:  #A8C8E0;
+  --danger:     #C4401A;
+  --warn:       #C87820;
+  --safe:       #3B6B1A;
+  --bg:         #FAF6EE;
+  --bg-card:    #FFFFFF;
+  --bg-deep:    #F0E8D8;
+  --border:     rgba(74,52,32,0.15);
+  --border-mid: rgba(74,52,32,0.28);
+  --text:       #1E1208;
+  --text-mid:   #4A3420;
+  --text-muted: #7A6248;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Source Sans 3', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+  --radius:     10px;
+  --radius-lg:  16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.header {
+  background: var(--soil);
+  padding: 1.5rem 2rem 1.25rem;
+  border-bottom: 3px solid var(--clay);
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 60px,
+    rgba(255,255,255,0.02) 60px,
+    rgba(255,255,255,0.02) 61px
+  );
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  position: relative;
+}
+.header-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--wheat);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.header-sub {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--clay);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.header-meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--clay);
+  text-align: right;
+}
+.header-meta span { display: block; }
+#updated-time { color: var(--straw); }
+
+/* ── SETUP PANEL ─────────────────────────────────────────── */
+.setup-wrap {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+.setup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 560px;
+}
+.setup-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--soil);
+  margin-bottom: 0.5rem;
+}
+.setup-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+.setup-row {
+  display: flex;
+  gap: 10px;
+}
+.setup-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.setup-row input:focus { border-color: var(--leaf-mid); }
+.btn {
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-leaf { background: var(--leaf); color: #fff; }
+.btn-soil { background: var(--soil); color: var(--wheat); }
+.btn-sm { padding: 6px 14px; font-size: 13px; }
+
+.error-bar {
+  margin-top: 0.75rem;
+  padding: 10px 14px;
+  background: #FEF0EC;
+  border: 1px solid rgba(196,64,26,0.3);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--danger);
+  display: none;
+}
+
+.worker-note {
+  margin-top: 1rem;
+  padding: 10px 14px;
+  background: var(--bg-deep);
+  border-left: 3px solid var(--clay);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.worker-note code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(0,0,0,0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────── */
+.main-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+  display: none;
+}
+
+/* ── SECTION LABELS ──────────────────────────────────────── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--soil);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title svg { flex-shrink: 0; }
+
+/* ── CONDITIONS STRIP ────────────────────────────────────── */
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.cond-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+}
+.cond-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.cond-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--soil);
+  line-height: 1;
+}
+.cond-unit { font-size: 0.8rem; font-weight: 400; color: var(--text-muted); }
+.cond-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+/* ── TWO-COL LAYOUT ──────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── ET SECTION ──────────────────────────────────────────── */
+.et-number {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 600;
+  color: var(--leaf);
+  line-height: 1;
+}
+.et-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 1.25rem;
+}
+.crop-bar-row { margin-bottom: 0.6rem; }
+.crop-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-mid);
+  margin-bottom: 3px;
+}
+.crop-bar-track {
+  background: var(--bg-deep);
+  border-radius: 3px;
+  height: 8px;
+  overflow: hidden;
+}
+.crop-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── SPRAY SECTION ───────────────────────────────────────── */
+.factor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.factor-tile {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-deep);
+}
+.factor-name {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.factor-val {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--soil);
+}
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-top: 5px;
+  text-transform: uppercase;
+}
+.badge-safe { background: #D4EDDA; color: #1A5C2A; }
+.badge-warn { background: #FFF0CC; color: #7A4A00; }
+.badge-bad  { background: #FCE4DC; color: #8C2A10; }
+
+.verdict {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.4;
+}
+.verdict-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.verdict-safe { background: #D4EDDA; color: #1A5C2A; border-left: 4px solid var(--leaf); }
+.verdict-warn { background: #FFF0CC; color: #7A4A00; border-left: 4px solid var(--warn); }
+.verdict-bad  { background: #FCE4DC; color: #8C2A10; border-left: 4px solid var(--danger); }
+
+/* ── HOURLY SPRAY ────────────────────────────────────────── */
+.hourly-wrap {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.hourly-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.hourly-table th {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-mid);
+  white-space: nowrap;
+}
+.hourly-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+.hourly-table tr:last-child td { border-bottom: none; }
+.hourly-table tr.best-window { background: #EAF5D4; }
+.hourly-table tr.bad-window { background: #FEF0EC; }
+.hourly-table tr.warn-window { background: #FFF8E6; }
+
+/* ── ET DEFICIT ──────────────────────────────────────────── */
+.deficit-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 500px) { .deficit-summary { grid-template-columns: 1fr; } }
+
+.def-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  text-align: center;
+}
+.def-tile .val {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.def-tile .lbl {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.def-tile.deficit .val { color: var(--danger); }
+.def-tile.surplus .val { color: var(--leaf); }
+.def-tile.neutral .val { color: var(--soil); }
+
+.manual-override {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+.manual-override h4 {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+.override-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.override-row label { font-size: 13px; color: var(--text-mid); min-width: 160px; }
+.override-row input[type="number"] {
+  width: 90px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-card);
+  color: var(--text);
+}
+.history-bars { margin-top: 1rem; }
+.hbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 0.72rem;
+  color: var(--text-mid);
+}
+.hbar-day { width: 36px; font-family: var(--font-mono); color: var(--text-muted); flex-shrink: 0; }
+.hbar-track { flex: 1; background: var(--bg-deep); border-radius: 3px; height: 12px; overflow: hidden; position: relative; }
+.hbar-et { height: 100%; background: var(--clay); border-radius: 3px; }
+.hbar-rain { position: absolute; top: 0; height: 100%; background: var(--sky); border-radius: 3px; opacity: 0.85; }
+.hbar-labels { display: flex; gap: 16px; margin-bottom: 6px; font-size: 0.65rem; color: var(--text-muted); }
+.hbar-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+
+/* ── 7-DAY ET FORECAST ───────────────────────────────────── */
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+@media (max-width: 700px) { .forecast-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.fc-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+}
+.fc-day-name {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.fc-et {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--leaf);
+}
+.fc-et-unit { font-size: 0.65rem; color: var(--text-muted); }
+.fc-temps { font-size: 0.72rem; color: var(--text-mid); margin-top: 4px; }
+.fc-rain { font-size: 0.68rem; color: var(--sky); margin-top: 2px; }
+.fc-spray-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+/* ── 3-DAY OUTLOOK ───────────────────────────────────────── */
+.outlook-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 500px) { .outlook-grid { grid-template-columns: 1fr; } }
+
+.outlook-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.outlook-day { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.outlook-temp { font-size: 1.35rem; font-weight: 600; color: var(--soil); margin-top: 4px; }
+.outlook-desc { font-size: 0.78rem; color: var(--text-mid); margin-top: 4px; }
+.outlook-rain { font-size: 0.75rem; color: var(--sky); margin-top: 4px; }
+
+/* ── LOADING ─────────────────────────────────────────────── */
+.loading-state {
+  text-align: center;
+  padding: 3rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  display: none;
+}
+.loading-dots::after {
+  content: '...';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%, 100% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* ── REFRESH BTN ─────────────────────────────────────────── */
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.refresh-btn:hover { background: var(--bg-deep); }
+
+.section-mb { margin-bottom: 1.5rem; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Panhandle Ag Weather</div>
+      <div class="header-sub">Gering, NE 69341 &nbsp;·&nbsp; Scotts Bluff County</div>
+    </div>
+    <div class="header-meta">
+      <span>41.8264° N, 103.6605° W</span>
+      <span>Elev. 3,838 ft</span>
+      <span id="updated-time">—</span>
+    </div>
+  </div>
+</header>
+
+<!-- SETUP -->
+<div class="setup-wrap" id="setup-section">
+  <div class="setup-card">
+    <h2>Connect weather data</h2>
+    <p>Enter your Cloudflare Worker URL. The worker proxies WeatherAPI.com and keeps your API key secure.</p>
+    <div class="setup-row">
+      <input type="text" id="worker-url" placeholder="https://your-worker.workers.dev/weather" value=""/>
+      <button class="btn btn-leaf" onclick="initLoad()">Load</button>
+    </div>
+    <div class="error-bar" id="error-bar"></div>
+    <div class="worker-note">
+      <strong>Cloudflare Worker setup:</strong> Your worker should accept <code>?q=Gering,NE&days=7</code> and forward to WeatherAPI <code>/v1/forecast.json</code>. See the README for a complete worker script.
+    </div>
+  </div>
+</div>
+
+<div class="loading-state" id="loading-state">
+  <span class="loading-dots">Fetching conditions</span>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div class="main-wrap" id="main-wrap">
+
+  <!-- Current conditions -->
+  <div class="section-mb">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+      <div class="section-label" style="margin-bottom:0; border:none;">Current conditions</div>
+      <button class="refresh-btn" onclick="initLoad()">↻ Refresh</button>
+    </div>
+    <div class="conditions-grid" id="conditions-grid"></div>
+  </div>
+
+  <!-- ET + Spray side by side -->
+  <div class="two-col section-mb">
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M12 2C6 2 2 8 2 12c0 5.5 4.5 10 10 10s10-4.5 10-10C22 8 18 2 12 2z"/><path d="M12 2v20M2 12h20"/></svg>
+        ET₀ — Penman-Monteith
+      </div>
+      <div id="et-main"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Spray window — now
+      </div>
+      <div class="factor-grid" id="factor-grid"></div>
+      <div id="spray-verdict"></div>
+    </div>
+
+  </div>
+
+  <!-- Hourly spray -->
+  <div class="card section-mb">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Hourly spray windows — next 24 hours
+    </div>
+    <div class="hourly-wrap">
+      <table class="hourly-table" id="hourly-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Temp °F</th>
+            <th>Wind mph</th>
+            <th>Humidity %</th>
+            <th>Precip mm</th>
+            <th>Condition</th>
+            <th>Spray window</th>
+          </tr>
+        </thead>
+        <tbody id="hourly-body"></tbody>
+      </table>
+    </div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.75rem; display:flex; gap:16px; flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#EAF5D4;border:1px solid #3B6B1A;border-radius:2px;margin-right:4px;"></span>Best window</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FFF8E6;border:1px solid var(--warn);border-radius:2px;margin-right:4px;"></span>Marginal</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FEF0EC;border:1px solid var(--danger);border-radius:2px;margin-right:4px;"></span>Do not spray</span>
+    </div>
+  </div>
+
+  <!-- 7-day ET forecast -->
+  <div class="card section-mb">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--clay)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      7-day ET forecast &amp; crop water demand
+    </div>
+    <div class="forecast-grid" id="forecast-grid"></div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.875rem; display:flex; gap:16px; flex-wrap:wrap;">
+      <span>ET₀ = reference evapotranspiration (mm/day)</span>
+      <span><span class="fc-spray-dot" style="background:var(--leaf);"></span> Good spray day &nbsp; <span class="fc-spray-dot" style="background:var(--warn);"></span> Marginal &nbsp; <span class="fc-spray-dot" style="background:var(--danger);"></span> Avoid</span>
+    </div>
+  </div>
+
+  <!-- ET Deficit -->
+  <div class="card section-mb">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sky)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6M12 16h.01"/></svg>
+      Running ET deficit — last 7 days
+    </div>
+    <div class="deficit-summary" id="deficit-summary"></div>
+    <div class="hbar-labels">
+      <span><span class="hbar-dot" style="background:var(--clay);"></span>ET demand</span>
+      <span><span class="hbar-dot" style="background:var(--sky);"></span>Rainfall received</span>
+    </div>
+    <div class="history-bars" id="history-bars"></div>
+    <div class="manual-override">
+      <h4>Manual rainfall override (in)</h4>
+      <div class="override-row">
+        <label>Actual rainfall last 7 days (in):</label>
+        <input type="number" id="manual-rain" min="0" max="20" step="0.1" placeholder="0.0"/>
+        <button class="btn btn-soil btn-sm" onclick="applyManualRain()">Apply</button>
+        <button class="btn btn-sm" style="border:1px solid var(--border-mid);" onclick="resetRain()">Reset to API</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-day outlook -->
+  <div class="section-mb">
+    <div class="section-label">3-day outlook</div>
+    <div class="outlook-grid" id="outlook-grid"></div>
+  </div>
+
+  <div style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); padding-top:1rem; border-top:1px solid var(--border);">
+    Data: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET method: FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE
+  </div>
+
+</div><!-- /main-wrap -->
+
+<script>
+/* ── CONFIG ──────────────────────────────────────────────── */
+const LOCATION = 'Gering,NE';
+const DAYS = 7;
+
+let cachedData = null;
+let apiRainMm = 0;
+let manualRainOverride = null;
+
+/* ── INIT ────────────────────────────────────────────────── */
+function initLoad() {
+  const url = document.getElementById('worker-url').value.trim();
+  if (!url) { showError('Please enter your Cloudflare Worker URL.'); return; }
+  fetchWeather(url);
+}
+
+function fetchWeather(workerUrl) {
+  showError('');
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('main-wrap').style.display = 'none';
+
+  const fullUrl = workerUrl.includes('?')
+    ? `${workerUrl}&q=${LOCATION}&days=${DAYS}`
+    : `${workerUrl}?q=${LOCATION}&days=${DAYS}`;
+
+  fetch(fullUrl)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      cachedData = data;
+      document.getElementById('loading-state').style.display = 'none';
+      renderAll(data);
+    })
+    .catch(err => {
+      document.getElementById('loading-state').style.display = 'none';
+      showError('Could not load data. Check your Worker URL and ensure CORS is enabled. (' + err.message + ')');
+    });
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-bar');
+  el.style.display = msg ? 'block' : 'none';
+  el.textContent = msg;
+}
+
+/* ── RENDER ALL ──────────────────────────────────────────── */
+function renderAll(data) {
+  document.getElementById('main-wrap').style.display = 'block';
+  const c = data.current;
+  const fc = data.forecast.forecastday;
+  document.getElementById('updated-time').textContent = 'Updated ' + c.last_updated;
+
+  const dewC = c.dewpoint_c !== undefined ? c.dewpoint_c : dewFromRH(c.temp_c, c.humidity);
+
+  renderConditions(c, dewC);
+
+  const et0 = pm(c.temp_c, c.humidity, c.wind_mph, c.pressure_mb, c.uv, dewC);
+  renderET(et0);
+  renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
+  renderHourly(fc);
+  render7DayET(fc);
+
+  apiRainMm = fc.slice(0,7).reduce((s, d) => s + d.day.totalprecip_mm, 0);
+  renderDeficit(fc);
+  renderOutlook(fc.slice(0, 3));
+}
+
+/* ── CONDITIONS ──────────────────────────────────────────── */
+function renderConditions(c, dewC) {
+  const dewF = (dewC * 9/5 + 32).toFixed(0);
+  const tiles = [
+    { label: 'Temperature', val: c.temp_f.toFixed(1), unit: '°F', sub: 'Feels ' + c.feelslike_f.toFixed(0) + '°F' },
+    { label: 'Humidity', val: c.humidity, unit: '%', sub: 'Dew pt ' + dewF + '°F' },
+    { label: 'Wind', val: c.wind_mph.toFixed(1), unit: ' mph', sub: c.wind_dir },
+    { label: 'Pressure', val: c.pressure_mb.toFixed(0), unit: ' mb', sub: c.condition.text },
+    { label: 'UV Index', val: c.uv, unit: '', sub: uvLbl(c.uv) },
+    { label: 'Cloud cover', val: c.cloud, unit: '%', sub: 'Vis ' + c.vis_km.toFixed(1) + ' km' },
+    { label: 'Precip today', val: c.precip_mm.toFixed(1), unit: ' mm', sub: c.precip_in.toFixed(2) + ' in' },
+  ];
+  document.getElementById('conditions-grid').innerHTML = tiles.map(t => `
+    <div class="cond-tile">
+      <div class="cond-label">${t.label}</div>
+      <div class="cond-value">${t.val}<span class="cond-unit">${t.unit}</span></div>
+      <div class="cond-sub">${t.sub}</div>
+    </div>`).join('');
+}
+
+/* ── PENMAN-MONTEITH ─────────────────────────────────────── */
+function pm(Tc, RH, windMph, pressMb, uv, dewC) {
+  const u2 = windMph * 0.44704 * (4.87 / Math.log(67.8 * 10 - 5.42));
+  const es = svp(Tc);
+  const ea = svp(dewC);
+  const VPD = Math.max(0, es - ea);
+  const delta = (4098 * es) / Math.pow(Tc + 237.3, 2);
+  const gamma = 0.000665 * (pressMb / 10);
+  const Rn = Math.max(0.5, (uv / 11) * 15);
+  const num = (0.408 * delta * Rn) + (gamma * (900 / (Tc + 273)) * u2 * VPD);
+  const den = delta + gamma * (1 + 0.34 * u2);
+  return Math.max(0, num / den);
+}
+
+function pmFromForecast(d) {
+  const Tc = (d.day.maxtemp_c + d.day.mintemp_c) / 2;
+  const RH = d.day.avghumidity;
+  const windMph = d.day.maxwind_mph * 0.6;
+  const pressMb = 900;
+  const uv = d.day.uv;
+  const dewC = dewFromRH(Tc, RH);
+  return pm(Tc, RH, windMph, pressMb, uv, dewC);
+}
+
+function pmHourly(h) {
+  const Tc = h.temp_c;
+  const RH = h.humidity;
+  const windMph = h.wind_mph;
+  const pressMb = h.pressure_mb || 900;
+  const uv = h.uv;
+  const dewC = h.dewpoint_c !== undefined ? h.dewpoint_c : dewFromRH(Tc, RH);
+  return pm(Tc, RH, windMph, pressMb, uv, dewC);
+}
+
+function svp(T) { return 0.6108 * Math.exp((17.27 * T) / (T + 237.3)); }
+function dewFromRH(T, RH) { return T - ((100 - RH) / 5); }
+function uvLbl(uv) {
+  if (uv <= 2) return 'Low'; if (uv <= 5) return 'Moderate';
+  if (uv <= 7) return 'High'; if (uv <= 10) return 'Very high'; return 'Extreme';
+}
+
+/* ── ET RENDER ───────────────────────────────────────────── */
+function renderET(et0) {
+  const mm = et0.toFixed(2);
+  const inch = (et0 * 0.0394).toFixed(3);
+  const crops = [
+    { name: 'Alfalfa', kc: 1.20, color: '#5A9128' },
+    { name: 'Corn', kc: 1.15, color: '#C87820' },
+    { name: 'Edible beans', kc: 1.10, color: '#3B9E8C' },
+    { name: 'Sugar beets', kc: 1.05, color: '#A0683A' },
+    { name: 'Winter wheat', kc: 0.90, color: '#888070' },
+  ];
+  const maxEtc = et0 * 1.20;
+
+  let demandLbl = 'Low';
+  if (et0 > 8) demandLbl = 'Very high';
+  else if (et0 > 6) demandLbl = 'High';
+  else if (et0 > 4) demandLbl = 'Moderate';
+  else if (et0 > 2) demandLbl = 'Low–moderate';
+
+  let irrNote = et0 > 6 ? '⚠ Consider irrigating' : et0 > 3 ? 'Monitor soil moisture' : 'Low demand today';
+
+  document.getElementById('et-main').innerHTML = `
+    <div class="et-number">${mm}<span style="font-size:1rem; font-weight:400; color:var(--text-muted);"> mm</span></div>
+    <div class="et-sub">${inch} in/day &nbsp;·&nbsp; ${demandLbl} demand &nbsp;·&nbsp; ${irrNote}</div>
+    ${crops.map(cr => {
+      const etc = et0 * cr.kc;
+      const pct = Math.min(100, (etc / (maxEtc + 1)) * 100).toFixed(1);
+      return `
+      <div class="crop-bar-row">
+        <div class="crop-bar-header">
+          <span>${cr.name} <span style="opacity:0.55; font-size:0.68rem;">(Kc ${cr.kc})</span></span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem;">${etc.toFixed(2)} mm</span>
+        </div>
+        <div class="crop-bar-track">
+          <div class="crop-bar-fill" style="width:${pct}%; background:${cr.color};"></div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.75rem;">FAO-56 Penman-Monteith. Kc = mid-season crop coefficient.</div>
+  `;
+}
+
+/* ── SPRAY NOW ───────────────────────────────────────────── */
+function sprayScore(windMph, humidity, tempF, precipIn) {
+  const factors = [];
+  let score = 0;
+
+  let wS, wC;
+  if (windMph < 3) { wS = 'Too calm — inversion risk'; wC = 'warn'; }
+  else if (windMph <= 10) { wS = 'Ideal'; wC = 'safe'; score++; }
+  else if (windMph <= 15) { wS = 'Marginal — drift risk'; wC = 'warn'; }
+  else { wS = 'Too windy — do not spray'; wC = 'bad'; score -= 2; }
+  factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph', status: wS, cls: wC });
+
+  let hS, hC;
+  if (humidity < 40) { hS = 'Low — volatilization'; hC = 'warn'; }
+  else if (humidity <= 80) { hS = 'Acceptable'; hC = 'safe'; score++; }
+  else { hS = 'High — poor drying'; hC = 'warn'; }
+  factors.push({ name: 'Humidity', val: humidity + '%', status: hS, cls: hC });
+
+  let tS, tC;
+  if (tempF < 40) { tS = 'Too cold'; tC = 'bad'; score -= 2; }
+  else if (tempF > 90) { tS = 'Too hot — volatilization'; tC = 'bad'; score -= 2; }
+  else if (tempF > 85) { tS = 'Warm — use caution'; tC = 'warn'; }
+  else { tS = 'Good'; tC = 'safe'; score++; }
+  factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F', status: tS, cls: tC });
+
+  let pS, pC;
+  if (precipIn > 0.1) { pS = 'Active precip — avoid'; pC = 'bad'; score -= 2; }
+  else if (precipIn > 0) { pS = 'Light precip — caution'; pC = 'warn'; }
+  else { pS = 'No precip'; pC = 'safe'; score++; }
+  factors.push({ name: 'Precipitation', val: (precipIn * 25.4).toFixed(1) + ' mm', status: pS, cls: pC });
+
+  const bads = factors.filter(f => f.cls === 'bad').length;
+  const warns = factors.filter(f => f.cls === 'warn').length;
+  let verdict, vClass;
+  if (bads > 0) { verdict = 'Do not spray — ' + bads + ' condition' + (bads > 1 ? 's' : '') + ' outside safe limits'; vClass = 'bad'; }
+  else if (warns >= 2) { verdict = 'Spray with caution — multiple marginal conditions'; vClass = 'warn'; }
+  else if (warns === 1) { verdict = 'Conditions mostly acceptable — monitor flagged factor'; vClass = 'warn'; }
+  else { verdict = 'Conditions within safe spray window — proceed'; vClass = 'safe'; }
+
+  return { factors, verdict, vClass };
+}
+
+function renderSprayNow(windMph, humidity, tempF, precipIn) {
+  const { factors, verdict, vClass } = sprayScore(windMph, humidity, tempF, precipIn);
+  document.getElementById('factor-grid').innerHTML = factors.map(f => `
+    <div class="factor-tile">
+      <div class="factor-name">${f.name}</div>
+      <div class="factor-val">${f.val}</div>
+      <span class="badge badge-${f.cls}">${f.status}</span>
+    </div>`).join('');
+  const icons = { safe: '✓', warn: '⚠', bad: '✕' };
+  document.getElementById('spray-verdict').innerHTML = `
+    <div class="verdict verdict-${vClass}">
+      <span class="verdict-icon">${icons[vClass]}</span>
+      <span>${verdict}</span>
+    </div>`;
+}
+
+/* ── HOURLY SPRAY ────────────────────────────────────────── */
+function renderHourly(fc) {
+  const now = new Date();
+  const hours = [];
+  fc.slice(0, 2).forEach(day => {
+    (day.hour || []).forEach(h => {
+      const t = new Date(h.time);
+      if (t >= now && hours.length < 24) hours.push(h);
+    });
+  });
+
+  const tbody = document.getElementById('hourly-body');
+  tbody.innerHTML = hours.map(h => {
+    const windMph = h.wind_mph;
+    const humidity = h.humidity;
+    const tempF = h.temp_f;
+    const precipIn = h.precip_in;
+    const { vClass } = sprayScore(windMph, humidity, tempF, precipIn);
+
+    const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
+    const label = vClass === 'safe' ? '✓ Good' : vClass === 'bad' ? '✕ Avoid' : '⚠ Marginal';
+
+    const timeStr = new Date(h.time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    return `<tr class="${rowClass}">
+      <td style="font-family:var(--font-mono); font-size:0.72rem;">${timeStr}</td>
+      <td>${tempF.toFixed(0)}°</td>
+      <td>${windMph.toFixed(1)}</td>
+      <td>${humidity}%</td>
+      <td>${(precipIn * 25.4).toFixed(1)}</td>
+      <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
+      <td style="font-weight:600; font-size:0.78rem;">${label}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── 7-DAY ET FORECAST ───────────────────────────────────── */
+function render7DayET(fc) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('forecast-grid').innerHTML = fc.slice(0, 7).map(d => {
+    const dt = new Date(d.date + 'T12:00:00');
+    const et0 = pmFromForecast(d);
+    const rainPct = d.day.daily_chance_of_rain;
+    const rainMm = d.day.totalprecip_mm.toFixed(1);
+
+    const windMph = d.day.maxwind_mph * 0.6;
+    const humidity = d.day.avghumidity;
+    const tempF = (d.day.maxtemp_f + d.day.mintemp_f) / 2;
+    const { vClass } = sprayScore(windMph, humidity, tempF, 0);
+    const dotColor = vClass === 'safe' ? 'var(--leaf)' : vClass === 'bad' ? 'var(--danger)' : 'var(--warn)';
+
+    return `
+    <div class="fc-tile">
+      <div class="fc-day-name">${days[dt.getDay()]}</div>
+      <div class="fc-et">${et0.toFixed(1)}<span class="fc-et-unit"> mm</span></div>
+      <div class="fc-temps">${d.day.maxtemp_f.toFixed(0)}° / ${d.day.mintemp_f.toFixed(0)}°</div>
+      <div class="fc-rain">💧 ${rainPct}% · ${rainMm}mm</div>
+      <div><span class="fc-spray-dot" style="background:${dotColor};" title="Spray outlook: ${vClass}"></span></div>
+    </div>`;
+  }).join('');
+}
+
+/* ── ET DEFICIT ──────────────────────────────────────────── */
+function renderDeficit(fc) {
+  const rainMm = manualRainOverride !== null
+    ? manualRainOverride * 25.4
+    : fc.slice(0, 7).reduce((s, d) => s + d.day.totalprecip_mm, 0);
+
+  let totalET = 0;
+  const bars = fc.slice(0, 7).map(d => {
+    const et = pmFromForecast(d);
+    totalET += et;
+    return { date: d.date, et, rain: d.day.totalprecip_mm };
+  });
+
+  const deficit = totalET - rainMm;
+  const maxBar = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 1);
+
+  let defClass = 'neutral', defNote = 'Balanced';
+  if (deficit > 20) { defClass = 'deficit'; defNote = 'Irrigate'; }
+  else if (deficit > 5) { defClass = 'deficit'; defNote = 'Monitor'; }
+  else if (deficit < -10) { defClass = 'surplus'; defNote = 'Surplus'; }
+
+  document.getElementById('deficit-summary').innerHTML = `
+    <div class="def-tile ${defClass}">
+      <div class="val">${Math.abs(deficit).toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
+      <div class="lbl">${deficit > 0 ? 'ET deficit' : 'ET surplus'}</div>
+    </div>
+    <div class="def-tile neutral">
+      <div class="val">${totalET.toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
+      <div class="lbl">Total ET demand</div>
+    </div>
+    <div class="def-tile ${rainMm > totalET ? 'surplus' : 'neutral'}">
+      <div class="val">${rainMm.toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
+      <div class="lbl">${manualRainOverride !== null ? 'Manual rainfall' : 'API rainfall'}</div>
+    </div>`;
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('history-bars').innerHTML = bars.map(b => {
+    const dt = new Date(b.date + 'T12:00:00');
+    const etPct = (b.et / maxBar * 100).toFixed(1);
+    const rainPct = (b.rain / maxBar * 100).toFixed(1);
+    return `
+    <div class="hbar-row">
+      <span class="hbar-day">${days[dt.getDay()]}</span>
+      <div class="hbar-track">
+        <div class="hbar-et" style="width:${etPct}%;"></div>
+        <div class="hbar-rain" style="width:${rainPct}%;"></div>
+      </div>
+      <span style="min-width:90px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(1)} | 🌧 ${b.rain.toFixed(1)}</span>
+    </div>`;
+  }).join('');
+}
+
+function applyManualRain() {
+  const v = parseFloat(document.getElementById('manual-rain').value);
+  if (isNaN(v) || v < 0) return;
+  manualRainOverride = v;
+  if (cachedData) renderDeficit(cachedData.forecast.forecastday);
+}
+
+function resetRain() {
+  manualRainOverride = null;
+  document.getElementById('manual-rain').value = '';
+  if (cachedData) renderDeficit(cachedData.forecast.forecastday);
+}
+
+/* ── 3-DAY OUTLOOK ───────────────────────────────────────── */
+function renderOutlook(days3) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('outlook-grid').innerHTML = days3.map(d => {
+    const dt = new Date(d.date + 'T12:00:00');
+    return `
+    <div class="outlook-tile">
+      <div class="outlook-day">${days[dt.getDay()]} ${d.date.slice(5)}</div>
+      <div class="outlook-temp">${d.day.maxtemp_f.toFixed(0)}° / ${d.day.mintemp_f.toFixed(0)}°F</div>
+      <div class="outlook-desc">${d.day.condition.text}</div>
+      <div class="outlook-rain">💧 ${d.day.daily_chance_of_rain}% · ${d.day.totalprecip_mm.toFixed(1)} mm</div>
+    </div>`;
+  }).join('');
+}
+</script>
+
+</body>
+</html>
