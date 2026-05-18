@@ -648,6 +648,61 @@ body {
   color: var(--text-muted);
 }
 .limit-note { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; }
+
+/* ── CROP SELECTOR ───────────────────────────────────────── */
+.crop-selector-panel {
+  background: var(--soil);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.crop-selector-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--clay);
+  white-space: nowrap;
+}
+.crop-btn-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.crop-btn {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1.5px solid var(--soil-light);
+  background: transparent;
+  color: var(--clay);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.crop-btn:hover { border-color: var(--straw); color: var(--straw); }
+.crop-btn.active {
+  background: var(--leaf-mid);
+  border-color: var(--leaf-mid);
+  color: #fff;
+}
+.crop-btn.active-raw {
+  background: var(--clay);
+  border-color: var(--clay);
+  color: var(--soil);
+}
+.crop-kc-note {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--soil-light);
+  margin-left: auto;
+}
 </style>
 </head>
 <body>
@@ -829,18 +884,32 @@ body {
     </div>
   </div>
 
+  <!-- Crop selector -->
+  <div class="crop-selector-panel" id="crop-selector-panel">
+    <span class="crop-selector-label">Crop selection</span>
+    <div class="crop-btn-group">
+      <button class="crop-btn active-raw" id="crop-btn-raw"       onclick="setCrop('raw')"     >Reference ET₀ (no crop)</button>
+      <button class="crop-btn"            id="crop-btn-corn"      onclick="setCrop('corn')"    >Corn</button>
+      <button class="crop-btn"            id="crop-btn-beets"     onclick="setCrop('beets')"   >Sugar Beets</button>
+      <button class="crop-btn"            id="crop-btn-alfalfa"   onclick="setCrop('alfalfa')" >Alfalfa</button>
+      <button class="crop-btn"            id="crop-btn-beans"     onclick="setCrop('beans')"   >Edible Beans</button>
+      <button class="crop-btn"            id="crop-btn-wheat"     onclick="setCrop('wheat')"   >Winter Wheat</button>
+    </div>
+    <span class="crop-kc-note" id="crop-kc-note">Kc not applied — raw atmospheric demand</span>
+  </div>
+
   <!-- 7-day ET forecast -->
   <div class="card section-mb">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--clay)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      7-Day ET Forecast &amp; Spray Outlook
+      7-Day ET Forecast &amp; Spray Outlook — <span id="forecast-crop-label">Reference ET₀</span>
     </div>
     <div style="background:var(--bg-deep); border-left:3px solid var(--clay); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-      Each tile shows the <strong>predicted</strong> daily crop water demand (ET) in inches for each of the next 7 days, pulled from Open-Meteo's forecast model. ET₀ is calculated directly by Open-Meteo using full FAO-56 Penman-Monteith with actual forecast solar radiation — more accurate than estimating from UV index. Use this view to plan irrigation scheduling and identify good spray windows before they arrive.
+      Each tile shows the <strong>predicted</strong> daily water demand in inches for each of the next 7 days from Open-Meteo's forecast model. Select a crop above to apply that crop's coefficient (Kc) to ET₀ — giving you the actual water demand for your specific field rather than the raw atmospheric baseline. Use this to plan pivot scheduling and identify good spray windows.
     </div>
     <div class="forecast-grid" id="forecast-grid"></div>
     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.875rem; display:flex; gap:16px; flex-wrap:wrap;">
-      <span>ET = estimated crop water loss (in/day)</span>
+      <span id="forecast-et-legend">ET₀ = reference evapotranspiration (in/day, no crop applied)</span>
       <span><span class="fc-spray-dot" style="background:var(--leaf);"></span> Good spray day &nbsp; <span class="fc-spray-dot" style="background:var(--warn);"></span> Marginal &nbsp; <span class="fc-spray-dot" style="background:var(--danger);"></span> Avoid</span>
     </div>
   </div>
@@ -849,7 +918,7 @@ body {
   <div class="card section-mb">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sky)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6M12 16h.01"/></svg>
-      Irrigation Deficit — Last 7 Days
+      Irrigation Deficit — Last 7 Days — <span id="deficit-crop-label">Reference ET₀</span>
     </div>
     <div style="background:var(--bg-deep); border-left:3px solid var(--sky); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
       <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is your field running short on water?</strong>
@@ -1295,6 +1364,53 @@ function renderHourly(fc) {
   }).join('');
 }
 
+/* ── CROP SELECTOR ───────────────────────────────────────── */
+const CROPS = {
+  raw:     { label: 'Reference ET₀',  kc: 1.00 },
+  corn:    { label: 'Corn',           kc: 1.15 },
+  beets:   { label: 'Sugar Beets',    kc: 1.05 },
+  alfalfa: { label: 'Alfalfa',        kc: 1.20 },
+  beans:   { label: 'Edible Beans',   kc: 1.10 },
+  wheat:   { label: 'Winter Wheat',   kc: 0.90 },
+};
+let selectedCrop = 'raw';
+
+function setCrop(key) {
+  selectedCrop = key;
+  const crop = CROPS[key];
+
+  // Update button states
+  Object.keys(CROPS).forEach(k => {
+    const btn = document.getElementById('crop-btn-' + k);
+    if (btn) {
+      btn.className = 'crop-btn' + (k === key ? (k === 'raw' ? ' active-raw' : ' active') : '');
+    }
+  });
+
+  // Update Kc note
+  const kcNote = document.getElementById('crop-kc-note');
+  if (key === 'raw') {
+    kcNote.textContent = 'Kc not applied — raw atmospheric demand';
+  } else {
+    kcNote.textContent = `${crop.label} · mid-season Kc = ${crop.kc}`;
+  }
+
+  // Update section labels
+  document.getElementById('forecast-crop-label').textContent = crop.label;
+  document.getElementById('deficit-crop-label').textContent  = crop.label;
+
+  const legendEl = document.getElementById('forecast-et-legend');
+  if (legendEl) {
+    legendEl.textContent = key === 'raw'
+      ? 'ET₀ = reference evapotranspiration (in/day, no crop applied)'
+      : `ETc = crop water demand for ${crop.label} (ET₀ × Kc ${crop.kc})`;
+  }
+
+  // Re-render both sections
+  if (cachedOMForecast) render7DayET(cachedOMForecast);
+  if (cachedOMHistory)  renderDeficit(cachedOMHistory);
+}
+
 /* ── 7-DAY ET FORECAST (Open-Meteo) ─────────────────────── */
 function render7DayET(omFc) {
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1302,28 +1418,39 @@ function render7DayET(omFc) {
   const etArr    = omFc.daily.et0_fao_evapotranspiration; // inches
   const maxArr   = omFc.daily.temperature_2m_max;
   const minArr   = omFc.daily.temperature_2m_min;
-  const rainArr  = omFc.daily.precipitation_sum;          // inches
+  const rainArr  = omFc.daily.precipitation_sum;
   const rainPct  = omFc.daily.precipitation_probability_max;
   const windArr  = omFc.daily.windspeed_10m_max;
 
-  document.getElementById('forecast-grid').innerHTML = dates.map((date, i) => {
-    const dt      = new Date(date + 'T12:00:00');
-    const etIn    = etArr[i] || 0;
-    const rainIn  = rainArr[i] || 0;
-    const pct     = rainPct[i] || 0;
-    const avgTempF = ((maxArr[i] || 0) + (minArr[i] || 0)) / 2;
-    const windMph = windArr[i] || 0;
+  const kc   = CROPS[selectedCrop].kc;
+  const crop = CROPS[selectedCrop];
 
-    // simple spray outlook based on forecast wind + temp
+  document.getElementById('forecast-grid').innerHTML = dates.map((date, i) => {
+    const dt       = new Date(date + 'T12:00:00');
+    const et0In    = etArr[i] || 0;
+    const etcIn    = et0In * kc;
+    const rainIn   = rainArr[i] || 0;
+    const pct      = rainPct[i] || 0;
+    const avgTempF = ((maxArr[i] || 0) + (minArr[i] || 0)) / 2;
+    const windMph  = windArr[i] || 0;
+
+    const L = sprayLimits;
     let dotColor = 'var(--leaf)';
-    if (windMph > 15 || avgTempF > 90 || avgTempF < 40 || rainIn > 0.1) dotColor = 'var(--danger)';
-    else if (windMph > 10 || avgTempF > 85) dotColor = 'var(--warn)';
+    if (windMph > HARD.windAbsMax || avgTempF > HARD.tempAbsMax || avgTempF < HARD.tempAbsMin || rainIn > 0.1)
+      dotColor = 'var(--danger)';
+    else if (windMph > L.windMax || windMph < L.windMin || avgTempF > L.tempMax || avgTempF < L.tempMin)
+      dotColor = 'var(--warn)';
+
+    const etLabel  = selectedCrop === 'raw' ? 'ET₀' : 'ETc';
+    const etColor  = selectedCrop === 'raw' ? 'var(--clay)' : 'var(--leaf)';
 
     return `
     <div class="fc-tile">
       <div class="fc-day-name">${dayNames[dt.getDay()]}</div>
       <div class="fc-day-name" style="font-size:0.58rem; margin-bottom:4px; opacity:0.7;">${date.slice(5)}</div>
-      <div class="fc-et">${etIn.toFixed(3)}<span class="fc-et-unit"> in</span></div>
+      <div style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-muted); margin-bottom:2px;">${etLabel}</div>
+      <div class="fc-et" style="color:${etColor};">${etcIn.toFixed(3)}<span class="fc-et-unit"> in</span></div>
+      ${selectedCrop !== 'raw' ? `<div style="font-size:0.6rem; color:var(--text-muted);">ET₀ ${et0In.toFixed(3)}"</div>` : ''}
       <div class="fc-temps">${(maxArr[i]||0).toFixed(0)}° / ${(minArr[i]||0).toFixed(0)}°</div>
       <div class="fc-rain">💧 ${pct}% · ${rainIn.toFixed(2)}"</div>
       <div><span class="fc-spray-dot" style="background:${dotColor};" title="Spray outlook"></span></div>
@@ -1333,23 +1460,29 @@ function render7DayET(omFc) {
 
 /* ── ET DEFICIT (Open-Meteo historical) ─────────────────── */
 function renderDeficit(omHist) {
-  const dates  = omHist.daily.time;
-  const etArr  = omHist.daily.et0_fao_evapotranspiration; // inches
-  const rainArr = omHist.daily.precipitation_sum;          // inches
+  const dates   = omHist.daily.time;
+  const etArr   = omHist.daily.et0_fao_evapotranspiration; // inches
+  const rainArr = omHist.daily.precipitation_sum;
+
+  const kc        = CROPS[selectedCrop].kc;
+  const cropLabel = CROPS[selectedCrop].label;
 
   const apiRainIn = rainArr.reduce((s, v) => s + (v || 0), 0);
   const rainIn    = manualRainOverride !== null ? manualRainOverride : apiRainIn;
-  let   totalETin = etArr.reduce((s, v) => s + (v || 0), 0);
 
   const bars = dates.map((date, i) => ({
     date,
-    et:   etArr[i]  || 0,
+    et0:  etArr[i]   || 0,
+    etc:  (etArr[i]  || 0) * kc,
     rain: rainArr[i] || 0,
   }));
 
-  const deficit  = totalETin - rainIn;
-  const maxBar   = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 0.01);
-  const defClass = deficit > 0.2 ? 'deficit' : deficit < -0.4 ? 'surplus' : 'neutral';
+  const totalETin = bars.reduce((s, b) => s + b.etc, 0);
+  const deficit   = totalETin - rainIn;
+  const maxBar    = Math.max(...bars.map(b => Math.max(b.etc, b.rain)), 0.01);
+  const defClass  = deficit > 0.2 ? 'deficit' : deficit < -0.4 ? 'surplus' : 'neutral';
+
+  const etLbl = selectedCrop === 'raw' ? 'Total ET₀ (recorded)' : `Total ETc — ${cropLabel}`;
 
   document.getElementById('deficit-summary').innerHTML = `
     <div class="def-tile ${defClass}">
@@ -1358,7 +1491,7 @@ function renderDeficit(omHist) {
     </div>
     <div class="def-tile neutral">
       <div class="val">${totalETin.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
-      <div class="lbl">Total ET (recorded)</div>
+      <div class="lbl">${etLbl}</div>
     </div>
     <div class="def-tile ${rainIn > totalETin ? 'surplus' : 'neutral'}">
       <div class="val">${rainIn.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
@@ -1368,16 +1501,18 @@ function renderDeficit(omHist) {
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   document.getElementById('history-bars').innerHTML = bars.map(b => {
     const dt      = new Date(b.date + 'T12:00:00');
-    const etPct   = (b.et   / maxBar * 100).toFixed(1);
+    const etPct   = (b.etc  / maxBar * 100).toFixed(1);
     const rainPct = (b.rain / maxBar * 100).toFixed(1);
+    const etDisp  = b.etc.toFixed(3);
+    const et0Note = selectedCrop !== 'raw' ? ` (ET₀ ${b.et0.toFixed(3)}")` : '';
     return `
     <div class="hbar-row">
-      <span class="hbar-day">${dayNames[dt.getDay()]}</span>
+      <span class="hbar-day">${dayNames[new Date(b.date + 'T12:00:00').getDay()]}</span>
       <div class="hbar-track">
         <div class="hbar-et"   style="width:${etPct}%;"></div>
         <div class="hbar-rain" style="width:${rainPct}%;"></div>
       </div>
-      <span style="min-width:120px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(3)}" | 🌧 ${b.rain.toFixed(2)}"</span>
+      <span style="min-width:155px; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted);">ET ${etDisp}"${et0Note} | 🌧 ${b.rain.toFixed(2)}"</span>
     </div>`;
   }).join('');
 }
