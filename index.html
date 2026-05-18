@@ -692,7 +692,7 @@ body {
       7-Day ET Forecast &amp; Spray Outlook
     </div>
     <div style="background:var(--bg-deep); border-left:3px solid var(--clay); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-      Each tile shows the forecasted daily crop water demand (ET) in inches for that day, along with the high/low temperature, rain probability, and a colored dot indicating whether conditions that day look favorable for spraying. Use this view to plan your week — identify low-ET days where irrigation pressure eases, and spot good spray windows before they arrive.
+      Each tile shows the <strong>predicted</strong> daily crop water demand (ET) in inches for each of the next 7 days, pulled from Open-Meteo's forecast model. ET₀ is calculated directly by Open-Meteo using full FAO-56 Penman-Monteith with actual forecast solar radiation — more accurate than estimating from UV index. Use this view to plan irrigation scheduling and identify good spray windows before they arrive.
     </div>
     <div class="forecast-grid" id="forecast-grid"></div>
     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.875rem; display:flex; gap:16px; flex-wrap:wrap;">
@@ -709,16 +709,16 @@ body {
     </div>
     <div style="background:var(--bg-deep); border-left:3px solid var(--sky); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
       <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is your field running short on water?</strong>
-      This section compares how much water your crops have demanded (total ET) against how much rain has actually fallen over the past 7 days. The difference is your irrigation deficit — the gap your pivot needs to fill.
+      This section shows <strong>actual recorded</strong> ET and rainfall for the past 7 days — not forecast estimates. Data comes from Open-Meteo's ERA5 reanalysis archive, the same dataset used by USDA and university extension programs. ET₀ is computed using the full FAO-56 Penman-Monteith formula with actual observed solar radiation, temperature, humidity, and wind.
       <br><br>
-      <strong style="color:var(--soil);">Example:</strong> If ET totals 1.8 inches over the week and you only received 0.4 inches of rain, your deficit is 1.4 inches — meaning your soil has lost that much more water than it received. The bar chart below shows the daily breakdown so you can see which days were hardest on your crops.
+      The deficit tells you how much more water your crops have lost to the atmosphere than the sky has put back. If ET totaled 1.8" over the week and only 0.4" of rain fell, your deficit is 1.4" — that gap needs to be filled by your pivot.
       <br><br>
-      <strong style="color:var(--soil);">Manual override:</strong> The API rainfall reading is from a weather station — it may not match what fell at your specific field. If you have your own rain gauge reading, enter it below and the deficit will recalculate using your actual number.
+      <strong style="color:var(--soil);">Manual override:</strong> Open-Meteo rainfall is from gridded reanalysis and may differ from your rain gauge. Enter your own reading below for a more precise deficit calculation.
     </div>
     <div class="deficit-summary" id="deficit-summary"></div>
     <div class="hbar-labels">
-      <span><span class="hbar-dot" style="background:var(--clay);"></span>ET demand (in)</span>
-      <span><span class="hbar-dot" style="background:var(--sky);"></span>Rainfall received (in)</span>
+      <span><span class="hbar-dot" style="background:var(--clay);"></span>Recorded ET (in)</span>
+      <span><span class="hbar-dot" style="background:var(--sky);"></span>Recorded rainfall (in)</span>
     </div>
     <div class="history-bars" id="history-bars"></div>
     <div class="manual-override">
@@ -727,7 +727,7 @@ body {
         <label>Actual rainfall last 7 days (in):</label>
         <input type="number" id="manual-rain" min="0" max="20" step="0.01" placeholder="0.00"/>
         <button class="btn btn-soil btn-sm" onclick="applyManualRain()">Apply</button>
-        <button class="btn btn-sm" style="border:1px solid var(--border-mid);" onclick="resetRain()">Reset to API</button>
+        <button class="btn btn-sm" style="border:1px solid var(--border-mid);" onclick="resetRain()">Reset to Open-Meteo</button>
       </div>
     </div>
   </div>
@@ -739,19 +739,51 @@ body {
   </div>
 
   <div style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); padding-top:1rem; border-top:1px solid var(--border);">
-    Data: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET method: FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE &nbsp;·&nbsp; All measurements in US customary units
+    Current conditions &amp; hourly: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET forecast &amp; historical deficit: Open-Meteo (ERA5) &nbsp;·&nbsp; FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE &nbsp;·&nbsp; US customary units
   </div>
 
 </div><!-- /main-wrap -->
 
 <script>
 /* ── CONFIG ──────────────────────────────────────────────── */
-const LOCATION = 'Gering,NE';
-const DAYS = 7;
+const LOCATION    = 'Gering,NE';
+const DAYS        = 7;
+const OM_LAT      = 41.8264;
+const OM_LON      = -103.6605;
 
-let cachedData = null;
-let apiRainMm = 0;
-let manualRainOverride = null;
+let cachedData          = null;
+let cachedOMForecast    = null;
+let cachedOMHistory     = null;
+let manualRainOverride  = null;
+
+/* ── OPEN-METEO HELPERS ──────────────────────────────────── */
+function omDateStr(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function fetchOpenMeteoForecast() {
+  const url = `https://api.open-meteo.com/v1/forecast`
+    + `?latitude=${OM_LAT}&longitude=${OM_LON}`
+    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,`
+    + `windspeed_10m_max,et0_fao_evapotranspiration,precipitation_probability_max`
+    + `&wind_speed_unit=mph&precipitation_unit=inch&temperature_unit=fahrenheit`
+    + `&timezone=America%2FDenver&forecast_days=7`;
+  return fetch(url).then(r => { if (!r.ok) throw new Error('OM forecast ' + r.status); return r.json(); });
+}
+
+function fetchOpenMeteoHistory() {
+  const today = new Date();
+  const end   = new Date(today); end.setDate(end.getDate() - 1);
+  const start = new Date(today); start.setDate(start.getDate() - 7);
+  const url = `https://archive-api.open-meteo.com/v1/archive`
+    + `?latitude=${OM_LAT}&longitude=${OM_LON}`
+    + `&start_date=${omDateStr(start)}&end_date=${omDateStr(end)}`
+    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,`
+    + `windspeed_10m_max,et0_fao_evapotranspiration`
+    + `&wind_speed_unit=mph&precipitation_unit=inch&temperature_unit=fahrenheit`
+    + `&timezone=America%2FDenver`;
+  return fetch(url).then(r => { if (!r.ok) throw new Error('OM history ' + r.status); return r.json(); });
+}
 
 /* ── INIT ────────────────────────────────────────────────── */
 function initLoad() {
@@ -769,16 +801,21 @@ function fetchWeather(workerUrl) {
     ? `${workerUrl}&q=${LOCATION}&days=${DAYS}`
     : `${workerUrl}?q=${LOCATION}&days=${DAYS}`;
 
-  fetch(fullUrl)
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
-      cachedData = data;
+  Promise.all([
+    fetch(fullUrl).then(r => { if (!r.ok) throw new Error('WeatherAPI HTTP ' + r.status); return r.json(); }),
+    fetchOpenMeteoForecast(),
+    fetchOpenMeteoHistory(),
+  ])
+    .then(([wapiData, omForecast, omHistory]) => {
+      cachedData       = wapiData;
+      cachedOMForecast = omForecast;
+      cachedOMHistory  = omHistory;
       document.getElementById('loading-state').style.display = 'none';
-      renderAll(data);
+      renderAll(wapiData, omForecast, omHistory);
     })
     .catch(err => {
       document.getElementById('loading-state').style.display = 'none';
-      showError('Could not load data. Check your Worker URL and ensure CORS is enabled. (' + err.message + ')');
+      showError('Could not load data: ' + err.message);
     });
 }
 
@@ -789,9 +826,9 @@ function showError(msg) {
 }
 
 /* ── RENDER ALL ──────────────────────────────────────────── */
-function renderAll(data) {
+function renderAll(data, omForecast, omHistory) {
   document.getElementById('main-wrap').style.display = 'block';
-  const c = data.current;
+  const c  = data.current;
   const fc = data.forecast.forecastday;
   document.getElementById('updated-time').textContent = 'Updated ' + c.last_updated;
 
@@ -803,10 +840,8 @@ function renderAll(data) {
   renderET(et0);
   renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
   renderHourly(fc);
-  render7DayET(fc);
-
-  apiRainMm = fc.slice(0,7).reduce((s, d) => s + d.day.totalprecip_mm, 0);
-  renderDeficit(fc);
+  render7DayET(omForecast);
+  renderDeficit(omHistory);
   renderOutlook(fc.slice(0, 3));
 }
 
@@ -1018,51 +1053,61 @@ function renderHourly(fc) {
   }).join('');
 }
 
-/* ── 7-DAY ET FORECAST ───────────────────────────────────── */
-function render7DayET(fc) {
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  document.getElementById('forecast-grid').innerHTML = fc.slice(0, 7).map(d => {
-    const dt = new Date(d.date + 'T12:00:00');
-    const et0 = pmFromForecast(d);
-    const rainPct = d.day.daily_chance_of_rain;
-    const rainMm = d.day.totalprecip_mm.toFixed(1);
+/* ── 7-DAY ET FORECAST (Open-Meteo) ─────────────────────── */
+function render7DayET(omFc) {
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dates    = omFc.daily.time;
+  const etArr    = omFc.daily.et0_fao_evapotranspiration; // inches
+  const maxArr   = omFc.daily.temperature_2m_max;
+  const minArr   = omFc.daily.temperature_2m_min;
+  const rainArr  = omFc.daily.precipitation_sum;          // inches
+  const rainPct  = omFc.daily.precipitation_probability_max;
+  const windArr  = omFc.daily.windspeed_10m_max;
 
-    const windMph = d.day.maxwind_mph * 0.6;
-    const humidity = d.day.avghumidity;
-    const tempF = (d.day.maxtemp_f + d.day.mintemp_f) / 2;
-    const { vClass } = sprayScore(windMph, humidity, tempF, 0);
-    const dotColor = vClass === 'safe' ? 'var(--leaf)' : vClass === 'bad' ? 'var(--danger)' : 'var(--warn)';
+  document.getElementById('forecast-grid').innerHTML = dates.map((date, i) => {
+    const dt      = new Date(date + 'T12:00:00');
+    const etIn    = etArr[i] || 0;
+    const rainIn  = rainArr[i] || 0;
+    const pct     = rainPct[i] || 0;
+    const avgTempF = ((maxArr[i] || 0) + (minArr[i] || 0)) / 2;
+    const windMph = windArr[i] || 0;
+
+    // simple spray outlook based on forecast wind + temp
+    let dotColor = 'var(--leaf)';
+    if (windMph > 15 || avgTempF > 90 || avgTempF < 40 || rainIn > 0.1) dotColor = 'var(--danger)';
+    else if (windMph > 10 || avgTempF > 85) dotColor = 'var(--warn)';
 
     return `
     <div class="fc-tile">
-      <div class="fc-day-name">${days[dt.getDay()]}</div>
-      <div class="fc-et">${(et0 * 0.0394).toFixed(3)}<span class="fc-et-unit"> in</span></div>
-      <div class="fc-temps">${d.day.maxtemp_f.toFixed(0)}° / ${d.day.mintemp_f.toFixed(0)}°</div>
-      <div class="fc-rain">💧 ${rainPct}% · ${d.day.totalprecip_in.toFixed(2)}in</div>
-      <div><span class="fc-spray-dot" style="background:${dotColor};" title="Spray outlook: ${vClass}"></span></div>
+      <div class="fc-day-name">${dayNames[dt.getDay()]}</div>
+      <div class="fc-day-name" style="font-size:0.58rem; margin-bottom:4px; opacity:0.7;">${date.slice(5)}</div>
+      <div class="fc-et">${etIn.toFixed(3)}<span class="fc-et-unit"> in</span></div>
+      <div class="fc-temps">${(maxArr[i]||0).toFixed(0)}° / ${(minArr[i]||0).toFixed(0)}°</div>
+      <div class="fc-rain">💧 ${pct}% · ${rainIn.toFixed(2)}"</div>
+      <div><span class="fc-spray-dot" style="background:${dotColor};" title="Spray outlook"></span></div>
     </div>`;
   }).join('');
 }
 
-/* ── ET DEFICIT ──────────────────────────────────────────── */
-function renderDeficit(fc) {
-  const apiRainIn = fc.slice(0, 7).reduce((s, d) => s + d.day.totalprecip_in, 0);
-  const rainIn = manualRainOverride !== null ? manualRainOverride : apiRainIn;
+/* ── ET DEFICIT (Open-Meteo historical) ─────────────────── */
+function renderDeficit(omHist) {
+  const dates  = omHist.daily.time;
+  const etArr  = omHist.daily.et0_fao_evapotranspiration; // inches
+  const rainArr = omHist.daily.precipitation_sum;          // inches
 
-  let totalETin = 0;
-  const bars = fc.slice(0, 7).map(d => {
-    const etIn = pmFromForecast(d) * 0.0394;
-    totalETin += etIn;
-    return { date: d.date, et: etIn, rain: d.day.totalprecip_in };
-  });
+  const apiRainIn = rainArr.reduce((s, v) => s + (v || 0), 0);
+  const rainIn    = manualRainOverride !== null ? manualRainOverride : apiRainIn;
+  let   totalETin = etArr.reduce((s, v) => s + (v || 0), 0);
 
-  const deficit = totalETin - rainIn;
-  const maxBar = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 0.01);
+  const bars = dates.map((date, i) => ({
+    date,
+    et:   etArr[i]  || 0,
+    rain: rainArr[i] || 0,
+  }));
 
-  let defClass = 'neutral';
-  if (deficit > 0.75) { defClass = 'deficit'; }
-  else if (deficit > 0.2) { defClass = 'deficit'; }
-  else if (deficit < -0.4) { defClass = 'surplus'; }
+  const deficit  = totalETin - rainIn;
+  const maxBar   = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 0.01);
+  const defClass = deficit > 0.2 ? 'deficit' : deficit < -0.4 ? 'surplus' : 'neutral';
 
   document.getElementById('deficit-summary').innerHTML = `
     <div class="def-tile ${defClass}">
@@ -1071,26 +1116,26 @@ function renderDeficit(fc) {
     </div>
     <div class="def-tile neutral">
       <div class="val">${totalETin.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
-      <div class="lbl">Total ET demand</div>
+      <div class="lbl">Total ET (recorded)</div>
     </div>
     <div class="def-tile ${rainIn > totalETin ? 'surplus' : 'neutral'}">
       <div class="val">${rainIn.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
-      <div class="lbl">${manualRainOverride !== null ? 'Your rain gauge' : 'API rainfall'}</div>
+      <div class="lbl">${manualRainOverride !== null ? 'Your rain gauge' : 'Recorded rainfall'}</div>
     </div>`;
 
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   document.getElementById('history-bars').innerHTML = bars.map(b => {
-    const dt = new Date(b.date + 'T12:00:00');
-    const etPct = (b.et / maxBar * 100).toFixed(1);
+    const dt      = new Date(b.date + 'T12:00:00');
+    const etPct   = (b.et   / maxBar * 100).toFixed(1);
     const rainPct = (b.rain / maxBar * 100).toFixed(1);
     return `
     <div class="hbar-row">
-      <span class="hbar-day">${days[dt.getDay()]}</span>
+      <span class="hbar-day">${dayNames[dt.getDay()]}</span>
       <div class="hbar-track">
-        <div class="hbar-et" style="width:${etPct}%;"></div>
+        <div class="hbar-et"   style="width:${etPct}%;"></div>
         <div class="hbar-rain" style="width:${rainPct}%;"></div>
       </div>
-      <span style="min-width:110px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(3)}" | 🌧 ${b.rain.toFixed(2)}"</span>
+      <span style="min-width:120px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(3)}" | 🌧 ${b.rain.toFixed(2)}"</span>
     </div>`;
   }).join('');
 }
@@ -1099,13 +1144,13 @@ function applyManualRain() {
   const v = parseFloat(document.getElementById('manual-rain').value);
   if (isNaN(v) || v < 0) return;
   manualRainOverride = v;
-  if (cachedData) renderDeficit(cachedData.forecast.forecastday);
+  if (cachedOMHistory) renderDeficit(cachedOMHistory);
 }
 
 function resetRain() {
   manualRainOverride = null;
   document.getElementById('manual-rain').value = '';
-  if (cachedData) renderDeficit(cachedData.forecast.forecastday);
+  if (cachedOMHistory) renderDeficit(cachedOMHistory);
 }
 
 /* ── 3-DAY OUTLOOK ───────────────────────────────────────── */
