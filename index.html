@@ -564,6 +564,90 @@ body {
 .refresh-btn:hover { background: var(--bg-deep); }
 
 .section-mb { margin-bottom: 1.5rem; }
+
+/* ── SPRAY LIMITS ────────────────────────────────────────── */
+.limits-panel {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.4rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.limits-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.limits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1.25rem 1.75rem;
+}
+.limit-row { display: flex; flex-direction: column; gap: 5px; }
+.limit-header { display: flex; justify-content: space-between; align-items: baseline; }
+.limit-name { font-size: 0.78rem; font-weight: 600; color: var(--soil); }
+.limit-range-val { font-family: var(--font-mono); font-size: 0.72rem; color: var(--leaf-mid); font-weight: 600; }
+.dual-slider-wrap {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+.dual-track {
+  position: absolute;
+  left: 0; right: 0;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+}
+.dual-fill {
+  position: absolute;
+  height: 5px;
+  background: var(--leaf-mid);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.dual-slider-wrap input[type=range] {
+  position: absolute;
+  width: 100%;
+  height: 5px;
+  background: transparent;
+  -webkit-appearance: none;
+  pointer-events: none;
+  outline: none;
+  margin: 0;
+}
+.dual-slider-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: all;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--leaf);
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.28);
+  cursor: pointer;
+}
+.dual-slider-wrap input[type=range]::-webkit-slider-thumb:hover { background: var(--leaf-mid); }
+.dual-slider-wrap input[type=range]::-moz-range-thumb {
+  pointer-events: all;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--leaf);
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.28);
+  cursor: pointer;
+}
+.limit-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+}
+.limit-note { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -612,6 +696,66 @@ body {
       <button class="refresh-btn" onclick="initLoad()">↻ Refresh</button>
     </div>
     <div class="conditions-grid" id="conditions-grid"></div>
+  </div>
+
+  <!-- Spray limits -->
+  <div class="limits-panel" id="spray-limits-panel">
+    <div class="limits-title">⚙ Spray application limits — adjust for your chemical label</div>
+    <div class="limits-grid">
+
+      <!-- Wind -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Wind speed</span>
+          <span class="limit-range-val" id="wind-val-display">3 – 10 mph</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="wind-fill"></div>
+          <input type="range" id="wind-min" min="0" max="25" step="1" value="3"  oninput="onLimitChange()"/>
+          <input type="range" id="wind-max" min="0" max="25" step="1" value="10" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25 mph</span></div>
+        <div class="limit-note">Below min = inversion risk. Above max = drift risk. Hard stop at 15+ mph regardless.</div>
+      </div>
+
+      <!-- Humidity -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Relative humidity</span>
+          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="humid-fill"></div>
+          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
+        <div class="limit-note">Below min = volatilization / droplet evaporation. Above max = poor drying / runoff risk.</div>
+      </div>
+
+      <!-- Temperature -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Temperature</span>
+          <span class="limit-range-val" id="temp-val-display">40 – 85 °F</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="temp-fill"></div>
+          <input type="range" id="temp-min" min="20" max="110" step="5" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="temp-max" min="20" max="110" step="5" value="85" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span><span>110 °F</span></div>
+        <div class="limit-note">Below min = slow absorption. Above max = volatilization. Hard stop below 32°F and above 95°F.</div>
+      </div>
+
+    </div>
+    <div style="margin-top:0.875rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-sm" style="border:1px solid var(--border-mid); font-size:12px;" onclick="resetLimits()">↺ Reset to defaults</button>
+      <span style="font-size:0.7rem; color:var(--text-muted);">Changes apply instantly to current conditions and the 24-hour table below.</span>
+    </div>
   </div>
 
   <!-- ET + Spray side by side -->
@@ -948,44 +1092,141 @@ function renderET(et0) {
   `;
 }
 
+/* ── SPRAY LIMITS STATE ──────────────────────────────────── */
+const DEFAULTS = {
+  windMin: 3, windMax: 10,
+  humidMin: 40, humidMax: 80,
+  tempMin: 40, tempMax: 85,
+};
+let sprayLimits = { ...DEFAULTS };
+
+// Hard absolute limits regardless of slider
+const HARD = {
+  windAbsMax: 15,   // always bad above this
+  tempAbsMin: 32,   // always bad below this
+  tempAbsMax: 95,   // always bad above this
+};
+
+function getLimits() {
+  return sprayLimits;
+}
+
+function onLimitChange() {
+  const wMin = parseInt(document.getElementById('wind-min').value);
+  const wMax = parseInt(document.getElementById('wind-max').value);
+  const hMin = parseInt(document.getElementById('humid-min').value);
+  const hMax = parseInt(document.getElementById('humid-max').value);
+  const tMin = parseInt(document.getElementById('temp-min').value);
+  const tMax = parseInt(document.getElementById('temp-max').value);
+
+  // Prevent handles crossing
+  if (wMin >= wMax) { document.getElementById('wind-min').value = wMax - 1; }
+  if (hMin >= hMax) { document.getElementById('humid-min').value = hMax - 5; }
+  if (tMin >= tMax) { document.getElementById('temp-min').value = tMax - 5; }
+
+  sprayLimits = {
+    windMin:  parseInt(document.getElementById('wind-min').value),
+    windMax:  parseInt(document.getElementById('wind-max').value),
+    humidMin: parseInt(document.getElementById('humid-min').value),
+    humidMax: parseInt(document.getElementById('humid-max').value),
+    tempMin:  parseInt(document.getElementById('temp-min').value),
+    tempMax:  parseInt(document.getElementById('temp-max').value),
+  };
+
+  updateSliderUI();
+
+  // Re-render both spray sections with new limits
+  if (cachedData) {
+    const c = cachedData.current;
+    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
+    renderHourly(cachedData.forecast.forecastday);
+  }
+}
+
+function updateSliderUI() {
+  const L = sprayLimits;
+
+  // Wind fill
+  const wRange = 25;
+  document.getElementById('wind-fill').style.left  = (L.windMin  / wRange * 100) + '%';
+  document.getElementById('wind-fill').style.width = ((L.windMax - L.windMin) / wRange * 100) + '%';
+  document.getElementById('wind-val-display').textContent = `${L.windMin} – ${L.windMax} mph`;
+
+  // Humid fill
+  document.getElementById('humid-fill').style.left  = (L.humidMin) + '%';
+  document.getElementById('humid-fill').style.width = (L.humidMax - L.humidMin) + '%';
+  document.getElementById('humid-val-display').textContent = `${L.humidMin} – ${L.humidMax} %`;
+
+  // Temp fill (range 20–110 = 90 span)
+  const tSpan = 90;
+  document.getElementById('temp-fill').style.left  = ((L.tempMin - 20) / tSpan * 100) + '%';
+  document.getElementById('temp-fill').style.width = ((L.tempMax - L.tempMin) / tSpan * 100) + '%';
+  document.getElementById('temp-val-display').textContent = `${L.tempMin} – ${L.tempMax} °F`;
+}
+
+function resetLimits() {
+  sprayLimits = { ...DEFAULTS };
+  document.getElementById('wind-min').value  = DEFAULTS.windMin;
+  document.getElementById('wind-max').value  = DEFAULTS.windMax;
+  document.getElementById('humid-min').value = DEFAULTS.humidMin;
+  document.getElementById('humid-max').value = DEFAULTS.humidMax;
+  document.getElementById('temp-min').value  = DEFAULTS.tempMin;
+  document.getElementById('temp-max').value  = DEFAULTS.tempMax;
+  updateSliderUI();
+  if (cachedData) {
+    const c = cachedData.current;
+    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
+    renderHourly(cachedData.forecast.forecastday);
+  }
+}
+
 /* ── SPRAY NOW ───────────────────────────────────────────── */
 function sprayScore(windMph, humidity, tempF, precipIn) {
+  const L = sprayLimits;
   const factors = [];
-  let score = 0;
 
+  // Wind
   let wS, wC;
-  if (windMph < 3) { wS = 'Too calm — inversion risk'; wC = 'warn'; }
-  else if (windMph <= 10) { wS = 'Ideal'; wC = 'safe'; score++; }
-  else if (windMph <= 15) { wS = 'Marginal — drift risk'; wC = 'warn'; }
-  else { wS = 'Too windy — do not spray'; wC = 'bad'; score -= 2; }
-  factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph', status: wS, cls: wC });
+  if (windMph > HARD.windAbsMax)    { wS = 'Too windy — do not spray'; wC = 'bad'; }
+  else if (windMph > L.windMax)     { wS = 'Above limit — drift risk'; wC = 'warn'; }
+  else if (windMph < L.windMin)     { wS = 'Below limit — inversion risk'; wC = 'warn'; }
+  else                              { wS = 'Within limit'; wC = 'safe'; }
+  factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph',
+    sub: `Limit: ${L.windMin}–${L.windMax} mph`, status: wS, cls: wC });
 
+  // Humidity
   let hS, hC;
-  if (humidity < 40) { hS = 'Low — volatilization'; hC = 'warn'; }
-  else if (humidity <= 80) { hS = 'Acceptable'; hC = 'safe'; score++; }
-  else { hS = 'High — poor drying'; hC = 'warn'; }
-  factors.push({ name: 'Humidity', val: humidity + '%', status: hS, cls: hC });
+  if (humidity < L.humidMin)        { hS = 'Below limit — volatilization risk'; hC = 'warn'; }
+  else if (humidity > L.humidMax)   { hS = 'Above limit — poor drying'; hC = 'warn'; }
+  else                              { hS = 'Within limit'; hC = 'safe'; }
+  factors.push({ name: 'Humidity', val: humidity + '%',
+    sub: `Limit: ${L.humidMin}–${L.humidMax}%`, status: hS, cls: hC });
 
+  // Temp
   let tS, tC;
-  if (tempF < 40) { tS = 'Too cold'; tC = 'bad'; score -= 2; }
-  else if (tempF > 90) { tS = 'Too hot — volatilization'; tC = 'bad'; score -= 2; }
-  else if (tempF > 85) { tS = 'Warm — use caution'; tC = 'warn'; }
-  else { tS = 'Good'; tC = 'safe'; score++; }
-  factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F', status: tS, cls: tC });
+  if (tempF < HARD.tempAbsMin || tempF > HARD.tempAbsMax) {
+    tS = tempF < HARD.tempAbsMin ? 'Freezing — do not spray' : 'Extreme heat — do not spray'; tC = 'bad';
+  } else if (tempF < L.tempMin)     { tS = 'Below limit — poor absorption'; tC = 'warn'; }
+  else if (tempF > L.tempMax)       { tS = 'Above limit — volatilization'; tC = 'warn'; }
+  else                              { tS = 'Within limit'; tC = 'safe'; }
+  factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
+    sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
 
+  // Precip (no slider — fixed)
   let pS, pC;
-  if (precipIn > 0.1) { pS = 'Active precip — avoid'; pC = 'bad'; score -= 2; }
-  else if (precipIn > 0) { pS = 'Light precip — caution'; pC = 'warn'; }
-  else { pS = 'No precip'; pC = 'safe'; score++; }
-  factors.push({ name: 'Precipitation', val: precipIn.toFixed(2) + ' in', status: pS, cls: pC });
+  if (precipIn > 0.1)               { pS = 'Active precip — avoid'; pC = 'bad'; }
+  else if (precipIn > 0)            { pS = 'Light precip — caution'; pC = 'warn'; }
+  else                              { pS = 'No precip'; pC = 'safe'; }
+  factors.push({ name: 'Precipitation', val: precipIn.toFixed(2) + ' in',
+    sub: 'Any rain = avoid', status: pS, cls: pC });
 
-  const bads = factors.filter(f => f.cls === 'bad').length;
+  const bads  = factors.filter(f => f.cls === 'bad').length;
   const warns = factors.filter(f => f.cls === 'warn').length;
   let verdict, vClass;
-  if (bads > 0) { verdict = 'Do not spray — ' + bads + ' condition' + (bads > 1 ? 's' : '') + ' outside safe limits'; vClass = 'bad'; }
+  if (bads > 0)        { verdict = 'Do not spray — ' + bads + ' condition' + (bads > 1 ? 's' : '') + ' outside safe limits'; vClass = 'bad'; }
   else if (warns >= 2) { verdict = 'Spray with caution — multiple marginal conditions'; vClass = 'warn'; }
-  else if (warns === 1) { verdict = 'Conditions mostly acceptable — monitor flagged factor'; vClass = 'warn'; }
-  else { verdict = 'Conditions within safe spray window — proceed'; vClass = 'safe'; }
+  else if (warns === 1){ verdict = 'Conditions mostly acceptable — monitor flagged factor'; vClass = 'warn'; }
+  else                 { verdict = 'Conditions within your spray window — proceed'; vClass = 'safe'; }
 
   return { factors, verdict, vClass };
 }
@@ -996,6 +1237,7 @@ function renderSprayNow(windMph, humidity, tempF, precipIn) {
     <div class="factor-tile">
       <div class="factor-name">${f.name}</div>
       <div class="factor-val">${f.val}</div>
+      <div style="font-size:0.65rem; color:var(--text-muted); margin-top:1px;">${f.sub}</div>
       <span class="badge badge-${f.cls}">${f.status}</span>
     </div>`).join('');
   const icons = { safe: '✓', warn: '⚠', bad: '✕' };
@@ -1167,7 +1409,7 @@ function renderOutlook(days3) {
     </div>`;
   }).join('');
 }
-window.addEventListener('load', initLoad);
+window.addEventListener('load', () => { updateSliderUI(); initLoad(); });
 </script>
 
 </body>
