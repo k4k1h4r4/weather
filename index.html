@@ -703,6 +703,41 @@ body {
   color: var(--soil-light);
   margin-left: auto;
 }
+
+/* ── INFO TOOLTIP ────────────────────────────────────────── */
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-mid);
+  background: var(--bg-deep);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+.info-btn:hover { background: var(--clay); color: #fff; border-color: var(--clay); }
+
+.info-box {
+  display: none;
+  background: var(--bg-deep);
+  border-left: 3px solid var(--clay);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+  animation: fadeIn 0.18s ease;
+}
+.info-box.visible { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
@@ -753,137 +788,6 @@ body {
     <div class="conditions-grid" id="conditions-grid"></div>
   </div>
 
-  <!-- Spray limits -->
-  <div class="limits-panel" id="spray-limits-panel">
-    <div class="limits-title">⚙ Spray application limits — adjust for your chemical label</div>
-    <div class="limits-grid">
-
-      <!-- Wind -->
-      <div class="limit-row">
-        <div class="limit-header">
-          <span class="limit-name">Wind speed</span>
-          <span class="limit-range-val" id="wind-val-display">3 – 10 mph</span>
-        </div>
-        <div class="dual-slider-wrap">
-          <div class="dual-track"></div>
-          <div class="dual-fill" id="wind-fill"></div>
-          <input type="range" id="wind-min" min="0" max="25" step="1" value="3"  oninput="onLimitChange()"/>
-          <input type="range" id="wind-max" min="0" max="25" step="1" value="10" oninput="onLimitChange()"/>
-        </div>
-        <div class="limit-ticks"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25 mph</span></div>
-        <div class="limit-note">Below min = inversion risk. Above max = drift risk. Hard stop at 15+ mph regardless.</div>
-      </div>
-
-      <!-- Humidity -->
-      <div class="limit-row">
-        <div class="limit-header">
-          <span class="limit-name">Relative humidity</span>
-          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
-        </div>
-        <div class="dual-slider-wrap">
-          <div class="dual-track"></div>
-          <div class="dual-fill" id="humid-fill"></div>
-          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
-          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
-        </div>
-        <div class="limit-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
-        <div class="limit-note">Below min = volatilization / droplet evaporation. Above max = poor drying / runoff risk.</div>
-      </div>
-
-      <!-- Temperature -->
-      <div class="limit-row">
-        <div class="limit-header">
-          <span class="limit-name">Temperature</span>
-          <span class="limit-range-val" id="temp-val-display">40 – 85 °F</span>
-        </div>
-        <div class="dual-slider-wrap">
-          <div class="dual-track"></div>
-          <div class="dual-fill" id="temp-fill"></div>
-          <input type="range" id="temp-min" min="20" max="110" step="5" value="40" oninput="onLimitChange()"/>
-          <input type="range" id="temp-max" min="20" max="110" step="5" value="85" oninput="onLimitChange()"/>
-        </div>
-        <div class="limit-ticks"><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span><span>110 °F</span></div>
-        <div class="limit-note">Below min = slow absorption. Above max = volatilization. Hard stop below 32°F and above 95°F.</div>
-      </div>
-
-    </div>
-    <div style="margin-top:0.875rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-sm" style="border:1px solid var(--border-mid); font-size:12px;" onclick="resetLimits()">↺ Reset to defaults</button>
-      <span style="font-size:0.7rem; color:var(--text-muted);">Changes apply instantly to current conditions and the 24-hour table below.</span>
-    </div>
-  </div>
-
-  <!-- ET + Spray side by side -->
-  <div class="two-col section-mb">
-
-    <div class="card">
-      <div class="card-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M12 2C6 2 2 8 2 12c0 5.5 4.5 10 10 10s10-4.5 10-10C22 8 18 2 12 2z"/><path d="M12 2v20M2 12h20"/></svg>
-        Crop Water Demand (ET)
-      </div>
-      <div style="background:var(--bg-deep); border-left:3px solid var(--leaf-mid); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-        <strong style="color:var(--soil); display:block; margin-bottom:3px;">What is ET and why does it matter?</strong>
-        Evapotranspiration (ET) is how much water your crops are losing to the atmosphere each day — through the soil surface and through the leaves. Think of it as your field's daily water bill. On a hot, windy, dry Panhandle day that number climbs fast. On a cool overcast day it stays low.
-        <br><br>
-        <strong style="color:var(--soil);">How is it calculated?</strong> This dashboard uses the FAO-56 Penman-Monteith formula — the gold standard used by UNL Extension and the Nebraska DNR. It weighs today's temperature, humidity, wind speed, atmospheric pressure, and solar radiation together to arrive at a reference ET₀ for a standard grass surface. Each crop then gets its own adjusted number using a crop coefficient (Kc) that accounts for how aggressively that crop pulls water at mid-season.
-        <br><br>
-        <strong style="color:var(--soil);">How to use it:</strong> Compare the ET total against recent rainfall in the Irrigation Deficit section below. If ET is consistently outpacing rain, your soil water is being drawn down and it may be time to run the pivot.
-      </div>
-      <div id="et-main"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Spray Window — Right Now
-      </div>
-      <div style="background:var(--bg-deep); border-left:3px solid var(--warn); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-        <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is it safe to spray right now?</strong>
-        Spraying herbicides, fungicides, or pesticides outside the ideal window wastes product and can damage crops or neighboring fields. This panel checks four conditions simultaneously and gives you a single go/no-go answer.
-        <br><br>
-        <strong style="color:var(--soil);">Wind (3–10 mph ideal):</strong> Too calm and a temperature inversion can trap chemical close to the ground and cause drift to nearby fields. Too windy and spray physically blows off target.
-        <strong style="color:var(--soil); display:block; margin-top:4px;">Humidity (40–80% ideal):</strong> Low humidity causes droplets to evaporate before they reach the leaf. High humidity slows drying and can cause runoff.
-        <strong style="color:var(--soil); display:block; margin-top:4px;">Temperature (40–85°F ideal):</strong> Heat causes many herbicides to volatilize — they turn to vapor and drift far off target. Cold slows absorption into the plant.
-        <strong style="color:var(--soil); display:block; margin-top:4px;">Precipitation:</strong> Any active rain washes product off leaves before it can work.
-      </div>
-      <div class="factor-grid" id="factor-grid"></div>
-      <div id="spray-verdict"></div>
-    </div>
-
-  </div>
-
-  <!-- Hourly spray -->
-  <div class="card section-mb">
-    <div class="card-title">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Hourly Spray Windows — Next 24 Hours
-    </div>
-    <div style="background:var(--bg-deep); border-left:3px solid var(--warn); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-      Each row below shows the forecasted conditions hour by hour and whether that hour falls within a safe spray window. Use this to plan your application time — early morning hours often offer the best combination of low wind, moderate humidity, and cooler temperatures. Green rows are your target windows. Avoid red rows entirely.
-    </div>
-    <div class="hourly-wrap">
-      <table class="hourly-table" id="hourly-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Temp °F</th>
-            <th>Wind mph</th>
-            <th>Humidity %</th>
-            <th>Precip in</th>
-            <th>Condition</th>
-            <th>Spray window</th>
-          </tr>
-        </thead>
-        <tbody id="hourly-body"></tbody>
-      </table>
-    </div>
-    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.75rem; display:flex; gap:16px; flex-wrap:wrap;">
-      <span><span style="display:inline-block;width:10px;height:10px;background:#EAF5D4;border:1px solid #3B6B1A;border-radius:2px;margin-right:4px;"></span>Best window</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#FFF8E6;border:1px solid var(--warn);border-radius:2px;margin-right:4px;"></span>Marginal</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#FEF0EC;border:1px solid var(--danger);border-radius:2px;margin-right:4px;"></span>Do not spray</span>
-    </div>
-  </div>
-
   <!-- Crop selector -->
   <div class="crop-selector-panel" id="crop-selector-panel">
     <span class="crop-selector-label">Crop selection</span>
@@ -903,9 +807,10 @@ body {
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--clay)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       7-Day ET Forecast &amp; Spray Outlook — <span id="forecast-crop-label">Reference ET₀</span>
+      <button class="info-btn" onclick="toggleInfo('info-forecast')" title="More information">?</button>
     </div>
-    <div style="background:var(--bg-deep); border-left:3px solid var(--clay); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-      Each tile shows the <strong>predicted</strong> daily water demand in inches for each of the next 7 days from Open-Meteo's forecast model. Select a crop above to apply that crop's coefficient (Kc) to ET₀ — giving you the actual water demand for your specific field rather than the raw atmospheric baseline. Use this to plan pivot scheduling and identify good spray windows.
+    <div class="info-box" id="info-forecast">
+      Each tile shows the <strong>predicted</strong> daily water demand in inches for each of the next 7 days from Open-Meteo's forecast model using FAO-56 Penman-Monteith with actual forecast solar radiation. Select a crop above to apply that crop's coefficient (Kc) — giving you crop-specific water demand rather than the raw atmospheric baseline. The colored dot on each tile reflects your current spray limit settings. Use this to plan pivot scheduling and identify upcoming spray windows.
     </div>
     <div class="forecast-grid" id="forecast-grid"></div>
     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.875rem; display:flex; gap:16px; flex-wrap:wrap;">
@@ -919,14 +824,10 @@ body {
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sky)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6M12 16h.01"/></svg>
       Irrigation Deficit — Last 7 Days — <span id="deficit-crop-label">Reference ET₀</span>
+      <button class="info-btn" onclick="toggleInfo('info-deficit')" title="More information">?</button>
     </div>
-    <div style="background:var(--bg-deep); border-left:3px solid var(--sky); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
-      <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is your field running short on water?</strong>
-      This section shows <strong>actual recorded</strong> ET and rainfall for the past 7 days — not forecast estimates. Data comes from Open-Meteo's ERA5 reanalysis archive, the same dataset used by USDA and university extension programs. ET₀ is computed using the full FAO-56 Penman-Monteith formula with actual observed solar radiation, temperature, humidity, and wind.
-      <br><br>
-      The deficit tells you how much more water your crops have lost to the atmosphere than the sky has put back. If ET totaled 1.8" over the week and only 0.4" of rain fell, your deficit is 1.4" — that gap needs to be filled by your pivot.
-      <br><br>
-      <strong style="color:var(--soil);">Manual override:</strong> Open-Meteo rainfall is from gridded reanalysis and may differ from your rain gauge. Enter your own reading below for a more precise deficit calculation.
+    <div class="info-box" id="info-deficit">
+      <strong>Actual recorded</strong> ET and rainfall for the past 7 days from Open-Meteo's ERA5 reanalysis archive — the same dataset used by USDA and UNL Extension. The deficit is how much more water your crops have lost than the sky has returned. Select a crop above to apply its Kc multiplier to get crop-specific demand. The manual override lets you substitute your own rain gauge reading for the gridded reanalysis value, which may differ from what fell on your specific field.
     </div>
     <div class="deficit-summary" id="deficit-summary"></div>
     <div class="hbar-labels">
@@ -945,10 +846,129 @@ body {
     </div>
   </div>
 
-  <!-- 3-day outlook -->
-  <div class="section-mb">
-    <div class="section-label">3-day outlook</div>
-    <div class="outlook-grid" id="outlook-grid"></div>
+  <!-- Crop Water Demand (ET) — collapsible -->
+  <div class="card section-mb">
+    <div class="card-title" style="cursor:pointer; user-select:none;" onclick="toggleET()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M12 2C6 2 2 8 2 12c0 5.5 4.5 10 10 10s10-4.5 10-10C22 8 18 2 12 2z"/><path d="M12 2v20M2 12h20"/></svg>
+      Crop Water Demand (ET) — Today
+      <span id="et-toggle-hint" style="font-size:0.72rem; font-weight:400; color:var(--text-muted); margin-left:auto;">▼ tap to expand</span>
+    </div>
+    <div id="et-collapsible" style="display:none;">
+      <div class="info-box" id="info-et" style="display:block; margin-bottom:1rem;">
+        Today's actual crop water loss based on live conditions (temperature, humidity, wind, pressure, UV). Uses FAO-56 Penman-Monteith with each crop's mid-season coefficient (Kc). The bar for each crop shows how many inches of water that crop is losing today — compare against your last irrigation to gauge urgency.
+      </div>
+      <div id="et-main"></div>
+    </div>
+  </div>
+
+  <!-- Spray limits -->
+  <div class="limits-panel" id="spray-limits-panel">
+    <div class="limits-title">
+      ⚙ Spray application limits
+      <button class="info-btn" onclick="toggleInfo('info-limits')" title="More information" style="margin-left:6px;">?</button>
+    </div>
+    <div class="info-box" id="info-limits">
+      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, and temperature limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F) are enforced regardless of slider position.
+    </div>
+    <div class="limits-grid">
+
+      <!-- Wind -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Wind speed</span>
+          <span class="limit-range-val" id="wind-val-display">3 – 10 mph</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="wind-fill"></div>
+          <input type="range" id="wind-min" min="0" max="15" step="1" value="3"  oninput="onLimitChange()"/>
+          <input type="range" id="wind-max" min="0" max="15" step="1" value="10" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>0 mph<br><span style="font-size:0.52rem;">calm/inversion</span></span><span style="text-align:center;">5</span><span style="text-align:center;">10</span><span style="text-align:right;">15 mph<br><span style="font-size:0.52rem;">hard stop</span></span></div>
+      </div>
+
+      <!-- Humidity -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Relative humidity</span>
+          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="humid-fill"></div>
+          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>0%<br><span style="font-size:0.52rem;">evaporation</span></span><span style="text-align:center;">50</span><span style="text-align:right;">100%<br><span style="font-size:0.52rem;">poor drying</span></span></div>
+      </div>
+
+      <!-- Temperature -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Temperature</span>
+          <span class="limit-range-val" id="temp-val-display">40 – 85 °F</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="temp-fill"></div>
+          <input type="range" id="temp-min" min="32" max="95" step="1" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="temp-max" min="32" max="95" step="1" value="85" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>32°F<br><span style="font-size:0.52rem;">hard stop/freezing</span></span><span style="text-align:center;">60°</span><span style="text-align:right;">95°F<br><span style="font-size:0.52rem;">hard stop/volatilize</span></span></div>
+      </div>
+
+    </div>
+    <div style="margin-top:0.875rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-sm" style="border:1px solid var(--border-mid); font-size:12px;" onclick="resetLimits()">↺ Reset to defaults</button>
+      <span style="font-size:0.7rem; color:var(--text-muted);">Changes apply instantly to the spray assessment and hourly table below.</span>
+    </div>
+  </div>
+
+  <!-- Spray window now -->
+  <div class="card section-mb">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Spray Window — Right Now
+      <button class="info-btn" onclick="toggleInfo('info-spraynow')" title="More information">?</button>
+    </div>
+    <div class="info-box" id="info-spraynow">
+      Checks four conditions against your current limit settings and gives a single go/no-go answer. <strong>Wind:</strong> below your min risks temperature inversions that trap and drift chemical; above your max causes physical off-target drift. <strong>Humidity:</strong> too low and droplets evaporate before reaching the leaf; too high and product won't dry or may run off. <strong>Temperature:</strong> below your min slows plant absorption; above your max causes volatile herbicides (especially auxins like dicamba/2,4-D) to turn to vapor and drift. <strong>Precipitation:</strong> any active rain washes product off before it can work.
+    </div>
+    <div class="factor-grid" id="factor-grid"></div>
+    <div id="spray-verdict"></div>
+  </div>
+
+  <!-- Hourly spray -->
+  <div class="card section-mb">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Hourly Spray Windows — Next 24 Hours
+      <button class="info-btn" onclick="toggleInfo('info-hourly')" title="More information">?</button>
+    </div>
+    <div class="info-box" id="info-hourly">
+      Each row is evaluated against your spray limit settings. Early morning hours typically offer the best windows — wind is usually lightest, humidity is moderate, and temperatures haven't climbed yet. Green rows meet all your limits. Yellow rows have one marginal factor worth monitoring. Red rows have at least one condition outside your safe range — do not spray.
+    </div>
+    <div class="hourly-wrap">
+      <table class="hourly-table" id="hourly-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Temp °F</th>
+            <th>Wind mph</th>
+            <th>Humidity %</th>
+            <th>Precip in</th>
+            <th>Condition</th>
+            <th>Spray window</th>
+          </tr>
+        </thead>
+        <tbody id="hourly-body"></tbody>
+      </table>
+    </div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.75rem; display:flex; gap:16px; flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#EAF5D4;border:1px solid #3B6B1A;border-radius:2px;margin-right:4px;"></span>Good window</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FFF8E6;border:1px solid var(--warn);border-radius:2px;margin-right:4px;"></span>Marginal</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FEF0EC;border:1px solid var(--danger);border-radius:2px;margin-right:4px;"></span>Do not spray</span>
+    </div>
   </div>
 
   <div style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); padding-top:1rem; border-top:1px solid var(--border);">
@@ -1055,7 +1075,6 @@ function renderAll(data, omForecast, omHistory) {
   renderHourly(fc);
   render7DayET(omForecast);
   renderDeficit(omHistory);
-  renderOutlook(fc.slice(0, 3));
 }
 
 /* ── CONDITIONS ──────────────────────────────────────────── */
@@ -1169,42 +1188,49 @@ const DEFAULTS = {
 };
 let sprayLimits = { ...DEFAULTS };
 
-// Hard absolute limits regardless of slider
+// Hard absolute limits — enforced regardless of slider
 const HARD = {
-  windAbsMax: 15,   // always bad above this
-  tempAbsMin: 32,   // always bad below this
-  tempAbsMax: 95,   // always bad above this
+  windAbsMax:  15,   // always bad at or above this
+  tempAbsMin:  32,   // always bad at or below this (freezing)
+  tempAbsMax:  95,   // always bad at or above this (volatilization)
 };
+
+/* ── INFO TOGGLE ─────────────────────────────────────────── */
+function toggleInfo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('visible');
+}
+
+/* ── ET COLLAPSE TOGGLE ──────────────────────────────────── */
+function toggleET() {
+  const body = document.getElementById('et-collapsible');
+  const hint = document.getElementById('et-toggle-hint');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  hint.textContent   = open ? '▼ tap to expand' : '▲ tap to collapse';
+}
 
 function getLimits() {
   return sprayLimits;
 }
 
 function onLimitChange() {
-  const wMin = parseInt(document.getElementById('wind-min').value);
-  const wMax = parseInt(document.getElementById('wind-max').value);
-  const hMin = parseInt(document.getElementById('humid-min').value);
-  const hMax = parseInt(document.getElementById('humid-max').value);
-  const tMin = parseInt(document.getElementById('temp-min').value);
-  const tMax = parseInt(document.getElementById('temp-max').value);
+  let wMin = parseInt(document.getElementById('wind-min').value);
+  let wMax = parseInt(document.getElementById('wind-max').value);
+  let hMin = parseInt(document.getElementById('humid-min').value);
+  let hMax = parseInt(document.getElementById('humid-max').value);
+  let tMin = parseInt(document.getElementById('temp-min').value);
+  let tMax = parseInt(document.getElementById('temp-max').value);
 
   // Prevent handles crossing
-  if (wMin >= wMax) { document.getElementById('wind-min').value = wMax - 1; }
-  if (hMin >= hMax) { document.getElementById('humid-min').value = hMax - 5; }
-  if (tMin >= tMax) { document.getElementById('temp-min').value = tMax - 5; }
+  if (wMin >= wMax) { document.getElementById('wind-min').value = wMax - 1; wMin = wMax - 1; }
+  if (hMin >= hMax) { document.getElementById('humid-min').value = hMax - 5; hMin = hMax - 5; }
+  if (tMin >= tMax) { document.getElementById('temp-min').value = tMax - 1; tMin = tMax - 1; }
 
-  sprayLimits = {
-    windMin:  parseInt(document.getElementById('wind-min').value),
-    windMax:  parseInt(document.getElementById('wind-max').value),
-    humidMin: parseInt(document.getElementById('humid-min').value),
-    humidMax: parseInt(document.getElementById('humid-max').value),
-    tempMin:  parseInt(document.getElementById('temp-min').value),
-    tempMax:  parseInt(document.getElementById('temp-max').value),
-  };
-
+  sprayLimits = { windMin: wMin, windMax: wMax, humidMin: hMin, humidMax: hMax, tempMin: tMin, tempMax: tMax };
   updateSliderUI();
 
-  // Re-render both spray sections with new limits
   if (cachedData) {
     const c = cachedData.current;
     renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
@@ -1215,20 +1241,20 @@ function onLimitChange() {
 function updateSliderUI() {
   const L = sprayLimits;
 
-  // Wind fill
-  const wRange = 25;
-  document.getElementById('wind-fill').style.left  = (L.windMin  / wRange * 100) + '%';
-  document.getElementById('wind-fill').style.width = ((L.windMax - L.windMin) / wRange * 100) + '%';
+  // Wind: range 0–15
+  const wSpan = 15;
+  document.getElementById('wind-fill').style.left  = (L.windMin  / wSpan * 100) + '%';
+  document.getElementById('wind-fill').style.width = ((L.windMax - L.windMin) / wSpan * 100) + '%';
   document.getElementById('wind-val-display').textContent = `${L.windMin} – ${L.windMax} mph`;
 
-  // Humid fill
-  document.getElementById('humid-fill').style.left  = (L.humidMin) + '%';
+  // Humidity: range 0–100
+  document.getElementById('humid-fill').style.left  = L.humidMin + '%';
   document.getElementById('humid-fill').style.width = (L.humidMax - L.humidMin) + '%';
   document.getElementById('humid-val-display').textContent = `${L.humidMin} – ${L.humidMax} %`;
 
-  // Temp fill (range 20–110 = 90 span)
-  const tSpan = 90;
-  document.getElementById('temp-fill').style.left  = ((L.tempMin - 20) / tSpan * 100) + '%';
+  // Temp: range 32–95 (span = 63)
+  const tSpan = 63;
+  document.getElementById('temp-fill').style.left  = ((L.tempMin - 32) / tSpan * 100) + '%';
   document.getElementById('temp-fill').style.width = ((L.tempMax - L.tempMin) / tSpan * 100) + '%';
   document.getElementById('temp-val-display').textContent = `${L.tempMin} – ${L.tempMax} °F`;
 }
