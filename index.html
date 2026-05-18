@@ -956,6 +956,7 @@ body {
             <th>Temp °F</th>
             <th>Wind mph</th>
             <th>Humidity %</th>
+            <th>Delta T °F</th>
             <th>Precip in</th>
             <th>Condition</th>
             <th>Spray window</th>
@@ -979,6 +980,7 @@ body {
 
 <script>
 /* ── CONFIG ──────────────────────────────────────────────── */
+const WORKER_URL  = 'https://weather.claytonstricker.workers.dev/';
 const LOCATION    = 'Gering,NE';
 const DAYS        = 7;
 const OM_LAT      = 41.8264;
@@ -1018,11 +1020,21 @@ function fetchOpenMeteoHistory() {
   return fetch(url).then(r => { if (!r.ok) throw new Error('OM history ' + r.status); return r.json(); });
 }
 
+/* ── DELTA T CALCULATION ─────────────────────────────────── */
+function calculateDeltaT(tempF, dewPointF) {
+  return tempF - dewPointF;
+}
+
+function getDeltaTStatus(deltaT) {
+  if (deltaT < 2) return { cls: 'bad', text: 'Avoid — Inversion risk' };
+  if (deltaT <= 8) return { cls: 'safe', text: 'Ideal spraying' };
+  if (deltaT <= 10) return { cls: 'warn', text: 'Caution — Fast evaporation' };
+  return { cls: 'bad', text: 'Avoid — High evaporation' };
+}
+
 /* ── INIT ────────────────────────────────────────────────── */
 function initLoad() {
-  const url = document.getElementById('worker-url').value.trim();
-  if (!url) { showError('Please enter your Cloudflare Worker URL.'); return; }
-  fetchWeather(url);
+  fetchWeather(WORKER_URL);
 }
 
 function fetchWeather(workerUrl) {
@@ -1371,6 +1383,8 @@ function renderHourly(fc) {
     const humidity = h.humidity;
     const tempF = h.temp_f;
     const precipIn = h.precip_in;
+    const dewPointF = h.dewpoint_f !== undefined ? h.dewpoint_f : (tempF - (100 - humidity) / 5);
+    const deltaT = calculateDeltaT(tempF, dewPointF);
     const { vClass } = sprayScore(windMph, humidity, tempF, precipIn);
 
     const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
@@ -1383,6 +1397,7 @@ function renderHourly(fc) {
       <td>${tempF.toFixed(0)}°</td>
       <td>${windMph.toFixed(1)}</td>
       <td>${humidity}%</td>
+      <td style="font-family:var(--font-mono); font-weight:600;">${deltaT.toFixed(1)}°</td>
       <td>${precipIn.toFixed(2)}</td>
       <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
       <td style="font-weight:600; font-size:0.78rem;">${label}</td>
