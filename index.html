@@ -868,7 +868,7 @@ body {
       <button class="info-btn" onclick="toggleInfo('info-limits')" title="More information" style="margin-left:6px;">?</button>
     </div>
     <div class="info-box" id="info-limits">
-      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, and temperature limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F) are enforced regardless of slider position.
+      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, temperature, and Delta T limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. Delta T (air temperature minus wet bulb temperature) reflects evaporation risk: 2–8°F is ideal, <2°F indicates inversion/poor drying, >10°F indicates excessive evaporation. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F, Delta T ≤0°F or ≥10°F) are enforced regardless of slider position.
     </div>
     <div class="limits-grid">
 
@@ -887,19 +887,19 @@ body {
         <div class="limit-ticks"><span>0 mph<br><span style="font-size:0.52rem;">calm/inversion</span></span><span style="text-align:center;">5</span><span style="text-align:center;">10</span><span style="text-align:right;">15 mph<br><span style="font-size:0.52rem;">hard stop</span></span></div>
       </div>
 
-      <!-- Humidity -->
+      <!-- Delta T -->
       <div class="limit-row">
         <div class="limit-header">
-          <span class="limit-name">Relative humidity</span>
-          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
+          <span class="limit-name">Delta T (Air – Wet Bulb)</span>
+          <span class="limit-range-val" id="deltat-val-display">2 – 8 °F</span>
         </div>
         <div class="dual-slider-wrap">
           <div class="dual-track"></div>
-          <div class="dual-fill" id="humid-fill"></div>
-          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
-          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
+          <div class="dual-fill" id="deltat-fill"></div>
+          <input type="range" id="deltat-min" min="0" max="10" step="0.5" value="2" oninput="onLimitChange()"/>
+          <input type="range" id="deltat-max" min="0" max="10" step="0.5" value="8" oninput="onLimitChange()"/>
         </div>
-        <div class="limit-ticks"><span>0%<br><span style="font-size:0.52rem;">evaporation</span></span><span style="text-align:center;">50</span><span style="text-align:right;">100%<br><span style="font-size:0.52rem;">poor drying</span></span></div>
+        <div class="limit-ticks"><span>0°F<br><span style="font-size:0.52rem;">inversion</span></span><span style="text-align:center;">5°</span><span style="text-align:right;">10°F<br><span style="font-size:0.52rem;">hard stop/evaporation</span></span></div>
       </div>
 
       <!-- Temperature -->
@@ -916,6 +916,22 @@ body {
         </div>
         <div class="limit-ticks"><span>32°F<br><span style="font-size:0.52rem;">hard stop/freezing</span></span><span style="text-align:center;">60°</span><span style="text-align:right;">95°F<br><span style="font-size:0.52rem;">hard stop/volatilize</span></span></div>
       </div>
+
+      <!-- Humidity -->
+      <div class="limit-row">
+        <div class="limit-header">
+          <span class="limit-name">Relative humidity</span>
+          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
+        </div>
+        <div class="dual-slider-wrap">
+          <div class="dual-track"></div>
+          <div class="dual-fill" id="humid-fill"></div>
+          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
+        </div>
+        <div class="limit-ticks"><span>0%<br><span style="font-size:0.52rem;">evaporation</span></span><span style="text-align:center;">50</span><span style="text-align:right;">100%<br><span style="font-size:0.52rem;">poor drying</span></span></div>
+      </div>
+
 
     </div>
     <div style="margin-top:0.875rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -953,13 +969,13 @@ body {
         <thead>
           <tr>
             <th>Time</th>
+            <th>Spray window</th>
             <th>Temp °F</th>
             <th>Wind mph</th>
-            <th>Humidity %</th>
             <th>Delta T °F</th>
+            <th>Humidity %</th>
             <th>Precip in</th>
             <th>Condition</th>
-            <th>Spray window</th>
           </tr>
         </thead>
         <tbody id="hourly-body"></tbody>
@@ -1215,6 +1231,7 @@ const DEFAULTS = {
   windMin: 3, windMax: 10,
   humidMin: 40, humidMax: 80,
   tempMin: 40, tempMax: 85,
+  deltaTMin: 2, deltaTMax: 8,
 };
 let sprayLimits = { ...DEFAULTS };
 
@@ -1223,6 +1240,8 @@ const HARD = {
   windAbsMax:  15,   // always bad at or above this
   tempAbsMin:  32,   // always bad at or below this (freezing)
   tempAbsMax:  95,   // always bad at or above this (volatilization)
+  deltaTAbsMin: 0,   // always bad at or below this (complete inversion)
+  deltaTAbsMax: 10,  // always bad at or above this (extreme evaporation)
 };
 
 /* ── INFO TOGGLE ─────────────────────────────────────────── */
@@ -1252,13 +1271,16 @@ function onLimitChange() {
   let hMax = parseInt(document.getElementById('humid-max').value);
   let tMin = parseInt(document.getElementById('temp-min').value);
   let tMax = parseInt(document.getElementById('temp-max').value);
+  let dMin = parseFloat(document.getElementById('deltat-min').value);
+  let dMax = parseFloat(document.getElementById('deltat-max').value);
 
   // Prevent handles crossing
   if (wMin >= wMax) { document.getElementById('wind-min').value = wMax - 1; wMin = wMax - 1; }
   if (hMin >= hMax) { document.getElementById('humid-min').value = hMax - 5; hMin = hMax - 5; }
   if (tMin >= tMax) { document.getElementById('temp-min').value = tMax - 1; tMin = tMax - 1; }
+  if (dMin >= dMax) { document.getElementById('deltat-min').value = dMax - 0.5; dMin = dMax - 0.5; }
 
-  sprayLimits = { windMin: wMin, windMax: wMax, humidMin: hMin, humidMax: hMax, tempMin: tMin, tempMax: tMax };
+  sprayLimits = { windMin: wMin, windMax: wMax, humidMin: hMin, humidMax: hMax, tempMin: tMin, tempMax: tMax, deltaTMin: dMin, deltaTMax: dMax };
   updateSliderUI();
 
   if (cachedData) {
@@ -1287,6 +1309,12 @@ function updateSliderUI() {
   document.getElementById('temp-fill').style.left  = ((L.tempMin - 32) / tSpan * 100) + '%';
   document.getElementById('temp-fill').style.width = ((L.tempMax - L.tempMin) / tSpan * 100) + '%';
   document.getElementById('temp-val-display').textContent = `${L.tempMin} – ${L.tempMax} °F`;
+
+  // Delta T: range 0–10
+  const dSpan = 10;
+  document.getElementById('deltat-fill').style.left  = (L.deltaTMin / dSpan * 100) + '%';
+  document.getElementById('deltat-fill').style.width = ((L.deltaTMax - L.deltaTMin) / dSpan * 100) + '%';
+  document.getElementById('deltat-val-display').textContent = `${L.deltaTMin.toFixed(1)} – ${L.deltaTMax.toFixed(1)} °F`;
 }
 
 function resetLimits() {
@@ -1297,6 +1325,8 @@ function resetLimits() {
   document.getElementById('humid-max').value = DEFAULTS.humidMax;
   document.getElementById('temp-min').value  = DEFAULTS.tempMin;
   document.getElementById('temp-max').value  = DEFAULTS.tempMax;
+  document.getElementById('deltat-min').value = DEFAULTS.deltaTMin;
+  document.getElementById('deltat-max').value = DEFAULTS.deltaTMax;
   updateSliderUI();
   if (cachedData) {
     const c = cachedData.current;
@@ -1309,20 +1339,21 @@ function resetLimits() {
 function sprayScore(windMph, humidity, tempF, precipIn) {
   const L = sprayLimits;
   const factors = [];
+  let outOfLimit = false;  // Track if ANY metric is outside its defined limit
 
   // Wind
   let wS, wC;
-  if (windMph > HARD.windAbsMax)    { wS = 'Too windy — do not spray'; wC = 'bad'; }
-  else if (windMph > L.windMax)     { wS = 'Above limit — drift risk'; wC = 'warn'; }
-  else if (windMph < L.windMin)     { wS = 'Below limit — inversion risk'; wC = 'warn'; }
+  if (windMph > HARD.windAbsMax)    { wS = 'Too windy — do not spray'; wC = 'bad'; outOfLimit = true; }
+  else if (windMph > L.windMax)     { wS = 'Above limit — drift risk'; wC = 'bad'; outOfLimit = true; }
+  else if (windMph < L.windMin)     { wS = 'Below limit — inversion risk'; wC = 'bad'; outOfLimit = true; }
   else                              { wS = 'Within limit'; wC = 'safe'; }
   factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph',
     sub: `Limit: ${L.windMin}–${L.windMax} mph`, status: wS, cls: wC });
 
   // Humidity
   let hS, hC;
-  if (humidity < L.humidMin)        { hS = 'Below limit — volatilization risk'; hC = 'warn'; }
-  else if (humidity > L.humidMax)   { hS = 'Above limit — poor drying'; hC = 'warn'; }
+  if (humidity < L.humidMin)        { hS = 'Below limit — volatilization risk'; hC = 'bad'; outOfLimit = true; }
+  else if (humidity > L.humidMax)   { hS = 'Above limit — poor drying'; hC = 'bad'; outOfLimit = true; }
   else                              { hS = 'Within limit'; hC = 'safe'; }
   factors.push({ name: 'Humidity', val: humidity + '%',
     sub: `Limit: ${L.humidMin}–${L.humidMax}%`, status: hS, cls: hC });
@@ -1330,9 +1361,9 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   // Temp
   let tS, tC;
   if (tempF < HARD.tempAbsMin || tempF > HARD.tempAbsMax) {
-    tS = tempF < HARD.tempAbsMin ? 'Freezing — do not spray' : 'Extreme heat — do not spray'; tC = 'bad';
-  } else if (tempF < L.tempMin)     { tS = 'Below limit — poor absorption'; tC = 'warn'; }
-  else if (tempF > L.tempMax)       { tS = 'Above limit — volatilization'; tC = 'warn'; }
+    tS = tempF < HARD.tempAbsMin ? 'Freezing — do not spray' : 'Extreme heat — do not spray'; tC = 'bad'; outOfLimit = true;
+  } else if (tempF < L.tempMin)     { tS = 'Below limit — poor absorption'; tC = 'bad'; outOfLimit = true; }
+  else if (tempF > L.tempMax)       { tS = 'Above limit — volatilization'; tC = 'bad'; outOfLimit = true; }
   else                              { tS = 'Within limit'; tC = 'safe'; }
   factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
     sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
@@ -1340,28 +1371,31 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   // Delta T (Air Temp - Wet Bulb Temp)
   const deltaT = calculateDeltaT(tempF, humidity);
   let dS, dC;
-  if (deltaT < 2)      { dS = 'Avoid — inversion/poor drying'; dC = 'bad'; }
-  else if (deltaT <= 8) { dS = 'Ideal spraying'; dC = 'safe'; }
-  else if (deltaT <= 10) { dS = 'Caution — fast evaporation'; dC = 'warn'; }
-  else                 { dS = 'Avoid — high evaporation'; dC = 'bad'; }
+  if (deltaT <= HARD.deltaTAbsMin || deltaT >= HARD.deltaTAbsMax) {
+    dS = deltaT <= HARD.deltaTAbsMin ? 'Avoid — inversion/no evaporation' : 'Avoid — extreme evaporation'; dC = 'bad'; outOfLimit = true;
+  } else if (deltaT < L.deltaTMin)  { dS = 'Below limit — poor drying'; dC = 'bad'; outOfLimit = true; }
+  else if (deltaT > L.deltaTMax)    { dS = 'Above limit — fast evaporation'; dC = 'bad'; outOfLimit = true; }
+  else                              { dS = 'Within limit'; dC = 'safe'; }
   factors.push({ name: 'Delta T', val: deltaT.toFixed(1) + '°F',
-    sub: '2–8°F ideal | <2°F or >10°F avoid', status: dS, cls: dC });
+    sub: `Limit: ${L.deltaTMin}–${L.deltaTMax}°F`, status: dS, cls: dC });
 
   // Precip (no slider — fixed)
   let pS, pC;
-  if (precipIn > 0.1)               { pS = 'Active precip — avoid'; pC = 'bad'; }
+  if (precipIn > 0.1)               { pS = 'Active precip — avoid'; pC = 'bad'; outOfLimit = true; }
   else if (precipIn > 0)            { pS = 'Light precip — caution'; pC = 'warn'; }
   else                              { pS = 'No precip'; pC = 'safe'; }
   factors.push({ name: 'Precipitation', val: precipIn.toFixed(2) + ' in',
     sub: 'Any rain = avoid', status: pS, cls: pC });
 
-  const bads  = factors.filter(f => f.cls === 'bad').length;
-  const warns = factors.filter(f => f.cls === 'warn').length;
+  // Verdict: if ANY limit is exceeded, DO NOT SPRAY
   let verdict, vClass;
-  if (bads > 0)        { verdict = 'Do not spray — ' + bads + ' condition' + (bads > 1 ? 's' : '') + ' outside safe limits'; vClass = 'bad'; }
-  else if (warns >= 2) { verdict = 'Spray with caution — multiple marginal conditions'; vClass = 'warn'; }
-  else if (warns === 1){ verdict = 'Conditions mostly acceptable — monitor flagged factor'; vClass = 'warn'; }
-  else                 { verdict = 'Conditions within your spray window — proceed'; vClass = 'safe'; }
+  if (outOfLimit) {
+    verdict = 'Do not spray — outside application limits';
+    vClass = 'bad';
+  } else {
+    verdict = 'Conditions within your spray window — proceed';
+    vClass = 'safe';
+  }
 
   return { factors, verdict, vClass };
 }
