@@ -620,7 +620,15 @@ body {
     <div class="card">
       <div class="card-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M12 2C6 2 2 8 2 12c0 5.5 4.5 10 10 10s10-4.5 10-10C22 8 18 2 12 2z"/><path d="M12 2v20M2 12h20"/></svg>
-        ET₀ — Penman-Monteith
+        Crop Water Demand (ET)
+      </div>
+      <div style="background:var(--bg-deep); border-left:3px solid var(--leaf-mid); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
+        <strong style="color:var(--soil); display:block; margin-bottom:3px;">What is ET and why does it matter?</strong>
+        Evapotranspiration (ET) is how much water your crops are losing to the atmosphere each day — through the soil surface and through the leaves. Think of it as your field's daily water bill. On a hot, windy, dry Panhandle day that number climbs fast. On a cool overcast day it stays low.
+        <br><br>
+        <strong style="color:var(--soil);">How is it calculated?</strong> This dashboard uses the FAO-56 Penman-Monteith formula — the gold standard used by UNL Extension and the Nebraska DNR. It weighs today's temperature, humidity, wind speed, atmospheric pressure, and solar radiation together to arrive at a reference ET₀ for a standard grass surface. Each crop then gets its own adjusted number using a crop coefficient (Kc) that accounts for how aggressively that crop pulls water at mid-season.
+        <br><br>
+        <strong style="color:var(--soil);">How to use it:</strong> Compare the ET total against recent rainfall in the Irrigation Deficit section below. If ET is consistently outpacing rain, your soil water is being drawn down and it may be time to run the pivot.
       </div>
       <div id="et-main"></div>
     </div>
@@ -628,7 +636,16 @@ body {
     <div class="card">
       <div class="card-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Spray window — now
+        Spray Window — Right Now
+      </div>
+      <div style="background:var(--bg-deep); border-left:3px solid var(--warn); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
+        <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is it safe to spray right now?</strong>
+        Spraying herbicides, fungicides, or pesticides outside the ideal window wastes product and can damage crops or neighboring fields. This panel checks four conditions simultaneously and gives you a single go/no-go answer.
+        <br><br>
+        <strong style="color:var(--soil);">Wind (3–10 mph ideal):</strong> Too calm and a temperature inversion can trap chemical close to the ground and cause drift to nearby fields. Too windy and spray physically blows off target.
+        <strong style="color:var(--soil); display:block; margin-top:4px;">Humidity (40–80% ideal):</strong> Low humidity causes droplets to evaporate before they reach the leaf. High humidity slows drying and can cause runoff.
+        <strong style="color:var(--soil); display:block; margin-top:4px;">Temperature (40–85°F ideal):</strong> Heat causes many herbicides to volatilize — they turn to vapor and drift far off target. Cold slows absorption into the plant.
+        <strong style="color:var(--soil); display:block; margin-top:4px;">Precipitation:</strong> Any active rain washes product off leaves before it can work.
       </div>
       <div class="factor-grid" id="factor-grid"></div>
       <div id="spray-verdict"></div>
@@ -640,7 +657,10 @@ body {
   <div class="card section-mb">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Hourly spray windows — next 24 hours
+      Hourly Spray Windows — Next 24 Hours
+    </div>
+    <div style="background:var(--bg-deep); border-left:3px solid var(--warn); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
+      Each row below shows the forecasted conditions hour by hour and whether that hour falls within a safe spray window. Use this to plan your application time — early morning hours often offer the best combination of low wind, moderate humidity, and cooler temperatures. Green rows are your target windows. Avoid red rows entirely.
     </div>
     <div class="hourly-wrap">
       <table class="hourly-table" id="hourly-table">
@@ -650,7 +670,7 @@ body {
             <th>Temp °F</th>
             <th>Wind mph</th>
             <th>Humidity %</th>
-            <th>Precip mm</th>
+            <th>Precip in</th>
             <th>Condition</th>
             <th>Spray window</th>
           </tr>
@@ -669,11 +689,14 @@ body {
   <div class="card section-mb">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--clay)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      7-day ET forecast &amp; crop water demand
+      7-Day ET Forecast &amp; Spray Outlook
+    </div>
+    <div style="background:var(--bg-deep); border-left:3px solid var(--clay); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
+      Each tile shows the forecasted daily crop water demand (ET) in inches for that day, along with the high/low temperature, rain probability, and a colored dot indicating whether conditions that day look favorable for spraying. Use this view to plan your week — identify low-ET days where irrigation pressure eases, and spot good spray windows before they arrive.
     </div>
     <div class="forecast-grid" id="forecast-grid"></div>
     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.875rem; display:flex; gap:16px; flex-wrap:wrap;">
-      <span>ET₀ = reference evapotranspiration (mm/day)</span>
+      <span>ET = estimated crop water loss (in/day)</span>
       <span><span class="fc-spray-dot" style="background:var(--leaf);"></span> Good spray day &nbsp; <span class="fc-spray-dot" style="background:var(--warn);"></span> Marginal &nbsp; <span class="fc-spray-dot" style="background:var(--danger);"></span> Avoid</span>
     </div>
   </div>
@@ -682,19 +705,27 @@ body {
   <div class="card section-mb">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sky)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6M12 16h.01"/></svg>
-      Running ET deficit — last 7 days
+      Irrigation Deficit — Last 7 Days
+    </div>
+    <div style="background:var(--bg-deep); border-left:3px solid var(--sky); border-radius:0 var(--radius) var(--radius) 0; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6;">
+      <strong style="color:var(--soil); display:block; margin-bottom:3px;">Is your field running short on water?</strong>
+      This section compares how much water your crops have demanded (total ET) against how much rain has actually fallen over the past 7 days. The difference is your irrigation deficit — the gap your pivot needs to fill.
+      <br><br>
+      <strong style="color:var(--soil);">Example:</strong> If ET totals 1.8 inches over the week and you only received 0.4 inches of rain, your deficit is 1.4 inches — meaning your soil has lost that much more water than it received. The bar chart below shows the daily breakdown so you can see which days were hardest on your crops.
+      <br><br>
+      <strong style="color:var(--soil);">Manual override:</strong> The API rainfall reading is from a weather station — it may not match what fell at your specific field. If you have your own rain gauge reading, enter it below and the deficit will recalculate using your actual number.
     </div>
     <div class="deficit-summary" id="deficit-summary"></div>
     <div class="hbar-labels">
-      <span><span class="hbar-dot" style="background:var(--clay);"></span>ET demand</span>
-      <span><span class="hbar-dot" style="background:var(--sky);"></span>Rainfall received</span>
+      <span><span class="hbar-dot" style="background:var(--clay);"></span>ET demand (in)</span>
+      <span><span class="hbar-dot" style="background:var(--sky);"></span>Rainfall received (in)</span>
     </div>
     <div class="history-bars" id="history-bars"></div>
     <div class="manual-override">
-      <h4>Manual rainfall override (in)</h4>
+      <h4>Manual rainfall override</h4>
       <div class="override-row">
         <label>Actual rainfall last 7 days (in):</label>
-        <input type="number" id="manual-rain" min="0" max="20" step="0.1" placeholder="0.0"/>
+        <input type="number" id="manual-rain" min="0" max="20" step="0.01" placeholder="0.00"/>
         <button class="btn btn-soil btn-sm" onclick="applyManualRain()">Apply</button>
         <button class="btn btn-sm" style="border:1px solid var(--border-mid);" onclick="resetRain()">Reset to API</button>
       </div>
@@ -708,7 +739,7 @@ body {
   </div>
 
   <div style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); padding-top:1rem; border-top:1px solid var(--border);">
-    Data: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET method: FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE
+    Data: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET method: FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE &nbsp;·&nbsp; All measurements in US customary units
   </div>
 
 </div><!-- /main-wrap -->
@@ -788,8 +819,8 @@ function renderConditions(c, dewC) {
     { label: 'Wind', val: c.wind_mph.toFixed(1), unit: ' mph', sub: c.wind_dir },
     { label: 'Pressure', val: c.pressure_mb.toFixed(0), unit: ' mb', sub: c.condition.text },
     { label: 'UV Index', val: c.uv, unit: '', sub: uvLbl(c.uv) },
-    { label: 'Cloud cover', val: c.cloud, unit: '%', sub: 'Vis ' + c.vis_km.toFixed(1) + ' km' },
-    { label: 'Precip today', val: c.precip_mm.toFixed(1), unit: ' mm', sub: c.precip_in.toFixed(2) + ' in' },
+    { label: 'Cloud cover', val: c.cloud, unit: '%', sub: 'Vis ' + (c.vis_km * 0.621).toFixed(1) + ' mi' },
+    { label: 'Precip today', val: c.precip_in.toFixed(2), unit: ' in', sub: '' },
   ];
   document.getElementById('conditions-grid').innerHTML = tiles.map(t => `
     <div class="cond-tile">
@@ -842,7 +873,6 @@ function uvLbl(uv) {
 
 /* ── ET RENDER ───────────────────────────────────────────── */
 function renderET(et0) {
-  const mm = et0.toFixed(2);
   const inch = (et0 * 0.0394).toFixed(3);
   const crops = [
     { name: 'Alfalfa', kc: 1.20, color: '#5A9128' },
@@ -851,34 +881,35 @@ function renderET(et0) {
     { name: 'Sugar beets', kc: 1.05, color: '#A0683A' },
     { name: 'Winter wheat', kc: 0.90, color: '#888070' },
   ];
-  const maxEtc = et0 * 1.20;
+  const maxEtcIn = et0 * 1.20 * 0.0394;
 
+  const et0in = et0 * 0.0394;
   let demandLbl = 'Low';
-  if (et0 > 8) demandLbl = 'Very high';
-  else if (et0 > 6) demandLbl = 'High';
-  else if (et0 > 4) demandLbl = 'Moderate';
-  else if (et0 > 2) demandLbl = 'Low–moderate';
+  if (et0in > 0.32) demandLbl = 'Very high';
+  else if (et0in > 0.24) demandLbl = 'High';
+  else if (et0in > 0.16) demandLbl = 'Moderate';
+  else if (et0in > 0.08) demandLbl = 'Low–moderate';
 
-  let irrNote = et0 > 6 ? '⚠ Consider irrigating' : et0 > 3 ? 'Monitor soil moisture' : 'Low demand today';
+  let irrNote = et0in > 0.24 ? '⚠ Consider irrigating' : et0in > 0.12 ? 'Monitor soil moisture' : 'Low demand today';
 
   document.getElementById('et-main').innerHTML = `
-    <div class="et-number">${mm}<span style="font-size:1rem; font-weight:400; color:var(--text-muted);"> mm</span></div>
-    <div class="et-sub">${inch} in/day &nbsp;·&nbsp; ${demandLbl} demand &nbsp;·&nbsp; ${irrNote}</div>
+    <div class="et-number">${inch}<span style="font-size:1rem; font-weight:400; color:var(--text-muted);"> in/day</span></div>
+    <div class="et-sub">${demandLbl} demand &nbsp;·&nbsp; ${irrNote}</div>
     ${crops.map(cr => {
-      const etc = et0 * cr.kc;
-      const pct = Math.min(100, (etc / (maxEtc + 1)) * 100).toFixed(1);
+      const etcIn = et0 * cr.kc * 0.0394;
+      const pct = Math.min(100, (etcIn / (maxEtcIn + 0.04)) * 100).toFixed(1);
       return `
       <div class="crop-bar-row">
         <div class="crop-bar-header">
           <span>${cr.name} <span style="opacity:0.55; font-size:0.68rem;">(Kc ${cr.kc})</span></span>
-          <span style="font-family:var(--font-mono); font-size:0.72rem;">${etc.toFixed(2)} mm</span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem;">${etcIn.toFixed(3)} in</span>
         </div>
         <div class="crop-bar-track">
           <div class="crop-bar-fill" style="width:${pct}%; background:${cr.color};"></div>
         </div>
       </div>`;
     }).join('')}
-    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.75rem;">FAO-56 Penman-Monteith. Kc = mid-season crop coefficient.</div>
+    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.75rem;">FAO-56 Penman-Monteith. Kc = mid-season crop coefficient. Typical high-demand day in Nebraska: 0.25–0.35 in/day.</div>
   `;
 }
 
@@ -911,7 +942,7 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   if (precipIn > 0.1) { pS = 'Active precip — avoid'; pC = 'bad'; score -= 2; }
   else if (precipIn > 0) { pS = 'Light precip — caution'; pC = 'warn'; }
   else { pS = 'No precip'; pC = 'safe'; score++; }
-  factors.push({ name: 'Precipitation', val: (precipIn * 25.4).toFixed(1) + ' mm', status: pS, cls: pC });
+  factors.push({ name: 'Precipitation', val: precipIn.toFixed(2) + ' in', status: pS, cls: pC });
 
   const bads = factors.filter(f => f.cls === 'bad').length;
   const warns = factors.filter(f => f.cls === 'warn').length;
@@ -969,7 +1000,7 @@ function renderHourly(fc) {
       <td>${tempF.toFixed(0)}°</td>
       <td>${windMph.toFixed(1)}</td>
       <td>${humidity}%</td>
-      <td>${(precipIn * 25.4).toFixed(1)}</td>
+      <td>${precipIn.toFixed(2)}</td>
       <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
       <td style="font-weight:600; font-size:0.78rem;">${label}</td>
     </tr>`;
@@ -994,9 +1025,9 @@ function render7DayET(fc) {
     return `
     <div class="fc-tile">
       <div class="fc-day-name">${days[dt.getDay()]}</div>
-      <div class="fc-et">${et0.toFixed(1)}<span class="fc-et-unit"> mm</span></div>
+      <div class="fc-et">${(et0 * 0.0394).toFixed(3)}<span class="fc-et-unit"> in</span></div>
       <div class="fc-temps">${d.day.maxtemp_f.toFixed(0)}° / ${d.day.mintemp_f.toFixed(0)}°</div>
-      <div class="fc-rain">💧 ${rainPct}% · ${rainMm}mm</div>
+      <div class="fc-rain">💧 ${rainPct}% · ${d.day.totalprecip_in.toFixed(2)}in</div>
       <div><span class="fc-spray-dot" style="background:${dotColor};" title="Spray outlook: ${vClass}"></span></div>
     </div>`;
   }).join('');
@@ -1004,37 +1035,36 @@ function render7DayET(fc) {
 
 /* ── ET DEFICIT ──────────────────────────────────────────── */
 function renderDeficit(fc) {
-  const rainMm = manualRainOverride !== null
-    ? manualRainOverride * 25.4
-    : fc.slice(0, 7).reduce((s, d) => s + d.day.totalprecip_mm, 0);
+  const apiRainIn = fc.slice(0, 7).reduce((s, d) => s + d.day.totalprecip_in, 0);
+  const rainIn = manualRainOverride !== null ? manualRainOverride : apiRainIn;
 
-  let totalET = 0;
+  let totalETin = 0;
   const bars = fc.slice(0, 7).map(d => {
-    const et = pmFromForecast(d);
-    totalET += et;
-    return { date: d.date, et, rain: d.day.totalprecip_mm };
+    const etIn = pmFromForecast(d) * 0.0394;
+    totalETin += etIn;
+    return { date: d.date, et: etIn, rain: d.day.totalprecip_in };
   });
 
-  const deficit = totalET - rainMm;
-  const maxBar = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 1);
+  const deficit = totalETin - rainIn;
+  const maxBar = Math.max(...bars.map(b => Math.max(b.et, b.rain)), 0.01);
 
-  let defClass = 'neutral', defNote = 'Balanced';
-  if (deficit > 20) { defClass = 'deficit'; defNote = 'Irrigate'; }
-  else if (deficit > 5) { defClass = 'deficit'; defNote = 'Monitor'; }
-  else if (deficit < -10) { defClass = 'surplus'; defNote = 'Surplus'; }
+  let defClass = 'neutral';
+  if (deficit > 0.75) { defClass = 'deficit'; }
+  else if (deficit > 0.2) { defClass = 'deficit'; }
+  else if (deficit < -0.4) { defClass = 'surplus'; }
 
   document.getElementById('deficit-summary').innerHTML = `
     <div class="def-tile ${defClass}">
-      <div class="val">${Math.abs(deficit).toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
-      <div class="lbl">${deficit > 0 ? 'ET deficit' : 'ET surplus'}</div>
+      <div class="val">${Math.abs(deficit).toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
+      <div class="lbl">${deficit > 0 ? 'Irrigation deficit' : 'Water surplus'}</div>
     </div>
     <div class="def-tile neutral">
-      <div class="val">${totalET.toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
+      <div class="val">${totalETin.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
       <div class="lbl">Total ET demand</div>
     </div>
-    <div class="def-tile ${rainMm > totalET ? 'surplus' : 'neutral'}">
-      <div class="val">${rainMm.toFixed(1)}<span style="font-size:0.8rem;"> mm</span></div>
-      <div class="lbl">${manualRainOverride !== null ? 'Manual rainfall' : 'API rainfall'}</div>
+    <div class="def-tile ${rainIn > totalETin ? 'surplus' : 'neutral'}">
+      <div class="val">${rainIn.toFixed(2)}<span style="font-size:0.8rem;"> in</span></div>
+      <div class="lbl">${manualRainOverride !== null ? 'Your rain gauge' : 'API rainfall'}</div>
     </div>`;
 
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1049,7 +1079,7 @@ function renderDeficit(fc) {
         <div class="hbar-et" style="width:${etPct}%;"></div>
         <div class="hbar-rain" style="width:${rainPct}%;"></div>
       </div>
-      <span style="min-width:90px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(1)} | 🌧 ${b.rain.toFixed(1)}</span>
+      <span style="min-width:110px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">ET ${b.et.toFixed(3)}" | 🌧 ${b.rain.toFixed(2)}"</span>
     </div>`;
   }).join('');
 }
@@ -1077,7 +1107,7 @@ function renderOutlook(days3) {
       <div class="outlook-day">${days[dt.getDay()]} ${d.date.slice(5)}</div>
       <div class="outlook-temp">${d.day.maxtemp_f.toFixed(0)}° / ${d.day.mintemp_f.toFixed(0)}°F</div>
       <div class="outlook-desc">${d.day.condition.text}</div>
-      <div class="outlook-rain">💧 ${d.day.daily_chance_of_rain}% · ${d.day.totalprecip_mm.toFixed(1)} mm</div>
+      <div class="outlook-rain">💧 ${d.day.daily_chance_of_rain}% · ${d.day.totalprecip_in.toFixed(2)}"</div>
     </div>`;
   }).join('');
 }
