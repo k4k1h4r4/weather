@@ -866,7 +866,7 @@ body {
       <button class="info-btn" onclick="toggleInfo('info-limits')" title="More information" style="margin-left:6px;">?</button>
     </div>
     <div class="info-box" id="info-limits">
-      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, temperature, and Delta T limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. Delta T (air temperature minus wet bulb temperature) reflects evaporation risk: 2–8°F is ideal, <2°F indicates inversion/poor drying, >10°F indicates excessive evaporation. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F, Delta T ≤0°F or ≥10°F) are enforced regardless of slider position.
+      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, temperature, and Delta T limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. Delta T (air temperature minus wet bulb temperature) reflects evaporation risk: 4–14°F is ideal, <4°F indicates high humidity and droplets do not evaporate at all, 14-18°F has high evaporation risk, as the air has become quite dry, and conditions are marginal, >18°F indicates excessive evaporation, and you should NOT spray. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F, Delta T ≤0°F or ≥10°F) are enforced regardless of slider position.
     </div>
     <div class="limits-grid">
 
@@ -897,7 +897,7 @@ body {
           <input type="range" id="deltat-min" min="0" max="18" step="0.5" value="4" oninput="onLimitChange()"/>
           <input type="range" id="deltat-max" min="0" max="18" step="0.5" value="14" oninput="onLimitChange()"/>
         </div>
-        <div class="limit-ticks"><span>0°F<br><span style="font-size:0.52rem;">inversion</span></span><span style="text-align:center;">9°</span><span style="text-align:right;">18°F<br><span style="font-size:0.52rem;">hard stop/evaporation</span></span></div>
+        <div class="limit-ticks"><span>0°F<br><span style="font-size:0.52rem;">high humidity</span></span><span style="text-align:center;">9°</span><span style="text-align:right;">18°F<br><span style="font-size:0.52rem;">hard stop/evaporation</span></span></div>
       </div>
 
       <!-- Temperature -->
