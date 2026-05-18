@@ -1455,13 +1455,14 @@ function renderHourly(fc) {
 
     return `<tr class="${rowClass}">
       <td style="font-family:var(--font-mono); font-size:0.72rem;">${timeStr}</td>
+      <td style="font-weight:600; font-size:0.78rem;">${label}</td>
       <td>${tempF.toFixed(0)}°</td>
       <td>${windMph.toFixed(1)}</td>
-      <td>${humidity}%</td>
       <td style="font-family:var(--font-mono); font-weight:600;">${deltaT.toFixed(1)}°</td>
+      <td>${humidity}%</td>
       <td>${precipIn.toFixed(2)}</td>
       <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
-      <td style="font-weight:600; font-size:0.78rem;">${label}</td>
+
     </tr>`;
   }).join('');
 }
