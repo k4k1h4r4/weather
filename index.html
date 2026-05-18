@@ -1020,9 +1020,27 @@ function fetchOpenMeteoHistory() {
   return fetch(url).then(r => { if (!r.ok) throw new Error('OM history ' + r.status); return r.json(); });
 }
 
-/* ── DELTA T CALCULATION ─────────────────────────────────── */
-function calculateDeltaT(tempF, dewPointF) {
-  return tempF - dewPointF;
+/* ── DELTA T CALCULATION (Air Temp - Wet Bulb Temp) ──────────── */
+function calculateWetBulb(tempF, relativeHumidity) {
+  // Convert F to C for calculation
+  const tempC = (tempF - 32) * 5 / 9;
+  const RH = relativeHumidity / 100;
+  
+  // Magnus formula approximation for wet bulb
+  const wetBulbC = tempC * Math.atan(0.151977 * Math.sqrt(RH + 8.313659))
+    + Math.atan(tempC + Math.atan(0.151977 * Math.sqrt(RH + 8.313659)))
+    - Math.atan(Math.atan(0.151977 * Math.sqrt(RH + 8.313659)) - 1.676331)
+    + 0.00391838 * Math.pow(RH, 1.5) * Math.atan(0.023101 * RH)
+    - 4.686035;
+  
+  // Convert back to F
+  return (wetBulbC * 9 / 5) + 32;
+}
+
+function calculateDeltaT(tempF, relativeHumidity) {
+  // Delta T = Air Temperature - Wet Bulb Temperature
+  const wetBulbF = calculateWetBulb(tempF, relativeHumidity);
+  return tempF - wetBulbF;
 }
 
 function getDeltaTStatus(deltaT) {
@@ -1319,6 +1337,16 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
     sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
 
+  // Delta T (Air Temp - Wet Bulb Temp)
+  const deltaT = calculateDeltaT(tempF, humidity);
+  let dS, dC;
+  if (deltaT < 2)      { dS = 'Avoid — inversion/poor drying'; dC = 'bad'; }
+  else if (deltaT <= 8) { dS = 'Ideal spraying'; dC = 'safe'; }
+  else if (deltaT <= 10) { dS = 'Caution — fast evaporation'; dC = 'warn'; }
+  else                 { dS = 'Avoid — high evaporation'; dC = 'bad'; }
+  factors.push({ name: 'Delta T', val: deltaT.toFixed(1) + '°F',
+    sub: '2–8°F ideal | <2°F or >10°F avoid', status: dS, cls: dC });
+
   // Precip (no slider — fixed)
   let pS, pC;
   if (precipIn > 0.1)               { pS = 'Active precip — avoid'; pC = 'bad'; }
@@ -1383,8 +1411,7 @@ function renderHourly(fc) {
     const humidity = h.humidity;
     const tempF = h.temp_f;
     const precipIn = h.precip_in;
-    const dewPointF = h.dewpoint_f !== undefined ? h.dewpoint_f : (tempF - (100 - humidity) / 5);
-    const deltaT = calculateDeltaT(tempF, dewPointF);
+    const deltaT = calculateDeltaT(tempF, humidity);
     const { vClass } = sprayScore(windMph, humidity, tempF, precipIn);
 
     const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
