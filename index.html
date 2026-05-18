@@ -749,8 +749,6 @@ body {
       <div class="header-sub">Gering, NE 69341 &nbsp;·&nbsp; Scotts Bluff County</div>
     </div>
     <div class="header-meta">
-      <span>41.8264° N, 103.6605° W</span>
-      <span>Elev. 3,838 ft</span>
       <span id="updated-time">—</span>
     </div>
   </div>
@@ -891,27 +889,27 @@ body {
       <div class="limit-row">
         <div class="limit-header">
           <span class="limit-name">Delta T (Air – Wet Bulb)</span>
-          <span class="limit-range-val" id="deltat-val-display">2 – 8 °F</span>
+          <span class="limit-range-val" id="deltat-val-display">4.0 – 14.0 °F</span>
         </div>
         <div class="dual-slider-wrap">
           <div class="dual-track"></div>
           <div class="dual-fill" id="deltat-fill"></div>
-          <input type="range" id="deltat-min" min="0" max="10" step="0.5" value="2" oninput="onLimitChange()"/>
-          <input type="range" id="deltat-max" min="0" max="10" step="0.5" value="8" oninput="onLimitChange()"/>
+          <input type="range" id="deltat-min" min="0" max="18" step="0.5" value="4" oninput="onLimitChange()"/>
+          <input type="range" id="deltat-max" min="0" max="18" step="0.5" value="14" oninput="onLimitChange()"/>
         </div>
-        <div class="limit-ticks"><span>0°F<br><span style="font-size:0.52rem;">inversion</span></span><span style="text-align:center;">5°</span><span style="text-align:right;">10°F<br><span style="font-size:0.52rem;">hard stop/evaporation</span></span></div>
+        <div class="limit-ticks"><span>0°F<br><span style="font-size:0.52rem;">inversion</span></span><span style="text-align:center;">9°</span><span style="text-align:right;">18°F<br><span style="font-size:0.52rem;">hard stop/evaporation</span></span></div>
       </div>
 
       <!-- Temperature -->
       <div class="limit-row">
         <div class="limit-header">
           <span class="limit-name">Temperature</span>
-          <span class="limit-range-val" id="temp-val-display">40 – 85 °F</span>
+          <span class="limit-range-val" id="temp-val-display">50 – 85 °F</span>
         </div>
         <div class="dual-slider-wrap">
           <div class="dual-track"></div>
           <div class="dual-fill" id="temp-fill"></div>
-          <input type="range" id="temp-min" min="32" max="95" step="1" value="40" oninput="onLimitChange()"/>
+          <input type="range" id="temp-min" min="32" max="95" step="1" value="50" oninput="onLimitChange()"/>
           <input type="range" id="temp-max" min="32" max="95" step="1" value="85" oninput="onLimitChange()"/>
         </div>
         <div class="limit-ticks"><span>32°F<br><span style="font-size:0.52rem;">hard stop/freezing</span></span><span style="text-align:center;">60°</span><span style="text-align:right;">95°F<br><span style="font-size:0.52rem;">hard stop/volatilize</span></span></div>
@@ -921,13 +919,13 @@ body {
       <div class="limit-row">
         <div class="limit-header">
           <span class="limit-name">Relative humidity</span>
-          <span class="limit-range-val" id="humid-val-display">40 – 80 %</span>
+          <span class="limit-range-val" id="humid-val-display">35 – 65 %</span>
         </div>
         <div class="dual-slider-wrap">
           <div class="dual-track"></div>
           <div class="dual-fill" id="humid-fill"></div>
-          <input type="range" id="humid-min" min="0" max="100" step="5" value="40" oninput="onLimitChange()"/>
-          <input type="range" id="humid-max" min="0" max="100" step="5" value="80" oninput="onLimitChange()"/>
+          <input type="range" id="humid-min" min="0" max="100" step="5" value="35" oninput="onLimitChange()"/>
+          <input type="range" id="humid-max" min="0" max="100" step="5" value="65" oninput="onLimitChange()"/>
         </div>
         <div class="limit-ticks"><span>0%<br><span style="font-size:0.52rem;">evaporation</span></span><span style="text-align:center;">50</span><span style="text-align:right;">100%<br><span style="font-size:0.52rem;">poor drying</span></span></div>
       </div>
@@ -1060,9 +1058,9 @@ function calculateDeltaT(tempF, relativeHumidity) {
 }
 
 function getDeltaTStatus(deltaT) {
-  if (deltaT < 2) return { cls: 'bad', text: 'Avoid — Inversion risk' };
-  if (deltaT <= 8) return { cls: 'safe', text: 'Ideal spraying' };
-  if (deltaT <= 10) return { cls: 'warn', text: 'Caution — Fast evaporation' };
+  if (deltaT < 4) return { cls: 'bad', text: 'Avoid — Inversion risk' };
+  if (deltaT <= 14) return { cls: 'safe', text: 'Ideal spraying' };
+  if (deltaT <= 18) return { cls: 'warn', text: 'Caution — Fast evaporation' };
   return { cls: 'bad', text: 'Avoid — High evaporation' };
 }
 
@@ -1229,9 +1227,9 @@ function renderET(et0) {
 /* ── SPRAY LIMITS STATE ──────────────────────────────────── */
 const DEFAULTS = {
   windMin: 3, windMax: 10,
-  humidMin: 40, humidMax: 80,
-  tempMin: 40, tempMax: 85,
-  deltaTMin: 2, deltaTMax: 8,
+  humidMin: 35, humidMax: 65,
+  tempMin: 50, tempMax: 85,
+  deltaTMin: 4, deltaTMax: 14,
 };
 let sprayLimits = { ...DEFAULTS };
 
@@ -1241,7 +1239,7 @@ const HARD = {
   tempAbsMin:  32,   // always bad at or below this (freezing)
   tempAbsMax:  95,   // always bad at or above this (volatilization)
   deltaTAbsMin: 0,   // always bad at or below this (complete inversion)
-  deltaTAbsMax: 10,  // always bad at or above this (extreme evaporation)
+  deltaTAbsMax: 18,  // always bad at or above this (extreme evaporation)
 };
 
 /* ── INFO TOGGLE ─────────────────────────────────────────── */
@@ -1310,8 +1308,8 @@ function updateSliderUI() {
   document.getElementById('temp-fill').style.width = ((L.tempMax - L.tempMin) / tSpan * 100) + '%';
   document.getElementById('temp-val-display').textContent = `${L.tempMin} – ${L.tempMax} °F`;
 
-  // Delta T: range 0–10
-  const dSpan = 10;
+  // Delta T: range 0–18
+  const dSpan = 18;
   document.getElementById('deltat-fill').style.left  = (L.deltaTMin / dSpan * 100) + '%';
   document.getElementById('deltat-fill').style.width = ((L.deltaTMax - L.deltaTMin) / dSpan * 100) + '%';
   document.getElementById('deltat-val-display').textContent = `${L.deltaTMin.toFixed(1)} – ${L.deltaTMax.toFixed(1)} °F`;
