@@ -311,16 +311,16 @@ body {
   background: var(--bg-deep);
 }
 .factor-tile.factor-safe {
-  background: #EAF5D4;
-  border-color: rgba(59,107,26,0.45);
+  background: #ABEFC6;
+  border-color: #16A34A;
 }
 .factor-tile.factor-warn {
-  background: #FFF8E6;
-  border-color: rgba(200,120,32,0.5);
+  background: #FDE68A;
+  border-color: #D97706;
 }
 .factor-tile.factor-bad {
-  background: #FEF0EC;
-  border-color: rgba(196,64,26,0.55);
+  background: #FECACA;
+  border-color: #DC2626;
 }
 .factor-tile.factor-safe .factor-name,
 .factor-tile.factor-warn .factor-name,
@@ -350,9 +350,9 @@ body {
   margin-top: 5px;
   text-transform: uppercase;
 }
-.badge-safe { background: #D4EDDA; color: #1A5C2A; }
-.badge-warn { background: #FFF0CC; color: #7A4A00; }
-.badge-bad  { background: #FCE4DC; color: #8C2A10; }
+.badge-safe { background: #ABEFC6; color: #14532D; }
+.badge-warn { background: #FDE68A; color: #78350F; }
+.badge-bad  { background: #FECACA; color: #7F1D1D; }
 
 .verdict {
   padding: 1rem 1.25rem;
@@ -365,9 +365,9 @@ body {
   line-height: 1.4;
 }
 .verdict-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
-.verdict-safe { background: #D4EDDA; color: #1A5C2A; border-left: 4px solid var(--leaf); }
-.verdict-warn { background: #FFF0CC; color: #7A4A00; border-left: 4px solid var(--warn); }
-.verdict-bad  { background: #FCE4DC; color: #8C2A10; border-left: 4px solid var(--danger); }
+.verdict-safe { background: #ABEFC6; color: #14532D; border-left: 4px solid #16A34A; }
+.verdict-warn { background: #FDE68A; color: #78350F; border-left: 4px solid #D97706; }
+.verdict-bad  { background: #FECACA; color: #7F1D1D; border-left: 4px solid #DC2626; }
 
 /* ── HOURLY SPRAY ────────────────────────────────────────── */
 .hourly-wrap {
@@ -398,16 +398,16 @@ body {
   white-space: nowrap;
 }
 .hourly-table tr:last-child td { border-bottom: none; }
-.hourly-table tr.best-window { background: #EAF5D4; }
-.hourly-table tr.bad-window { background: #FEF0EC; }
-.hourly-table tr.warn-window { background: #FFF8E6; }
+.hourly-table tr.best-window { background: #ABEFC6; }
+.hourly-table tr.bad-window { background: #FECACA; }
+.hourly-table tr.warn-window { background: #FDE68A; }
 .hourly-table td.metric-cell {
   color: var(--soil);
   font-weight: 600;
 }
-.hourly-table td.metric-safe { background: #EAF5D4; }
-.hourly-table td.metric-warn { background: #FFF8E6; }
-.hourly-table td.metric-bad { background: #FEF0EC; }
+.hourly-table td.metric-safe { background: #86EFAC; }
+.hourly-table td.metric-warn { background: #FCD34D; }
+.hourly-table td.metric-bad { background: #FCA5A5; }
 
 /* ── ET DEFICIT ──────────────────────────────────────────── */
 .deficit-summary {
@@ -1120,7 +1120,7 @@ body {
       <button class="info-btn" onclick="toggleInfo('info-hourly')" title="More information">?</button>
     </div>
     <div class="info-box" id="info-hourly">
-      Each row is evaluated against your spray limit settings. Green means within range, yellow means just outside your selected limits, and red means a hard stop.
+      Each row is evaluated against your spray limit settings. Green means within range. Yellow means only slightly outside your limit (within a narrow buffer). Red means clearly outside limits or a hard stop.
     </div>
     <div class="hourly-wrap">
       <table class="hourly-table" id="hourly-table">
@@ -1518,20 +1518,32 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
   let hasWarning = false;
   let hasHardStop = false;
 
+  // Narrow buffer beyond user limit that earns yellow; anything further is red.
+  const WB = { wind: 1.5, temp: 3, humidity: 5, deltaT: 1 };
+
   // Wind
   let wS, wC;
-  if (windMph >= HARD.windAbsMax)   { wS = 'Hard stop — wind'; wC = 'bad'; hasHardStop = true; }
-  else if (windMph > L.windMax)     { wS = 'Above selected range'; wC = 'warn'; hasWarning = true; }
-  else if (windMph < L.windMin)     { wS = 'Below selected range'; wC = 'warn'; hasWarning = true; }
-  else                              { wS = 'Within limit'; wC = 'safe'; }
+  if (windMph >= HARD.windAbsMax) {
+    wS = 'Hard stop — wind'; wC = 'bad'; hasHardStop = true;
+  } else if (windMph > L.windMax) {
+    if (windMph - L.windMax <= WB.wind) { wS = 'Slightly above limit'; wC = 'warn'; hasWarning = true; }
+    else                                { wS = 'Above limit'; wC = 'bad'; hasHardStop = true; }
+  } else if (windMph < L.windMin) {
+    if (L.windMin - windMph <= WB.wind) { wS = 'Slightly below limit'; wC = 'warn'; hasWarning = true; }
+    else                                { wS = 'Below limit'; wC = 'bad'; hasHardStop = true; }
+  } else { wS = 'Within limit'; wC = 'safe'; }
   factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph',
     sub: `Limit: ${L.windMin}–${L.windMax} mph`, status: wS, cls: wC });
 
   // Humidity
   let hS, hC;
-  if (humidity < L.humidMin)        { hS = 'Below selected range'; hC = 'warn'; hasWarning = true; }
-  else if (humidity > L.humidMax)   { hS = 'Above selected range'; hC = 'warn'; hasWarning = true; }
-  else                              { hS = 'Within limit'; hC = 'safe'; }
+  if (humidity < L.humidMin) {
+    if (L.humidMin - humidity <= WB.humidity) { hS = 'Slightly below limit'; hC = 'warn'; hasWarning = true; }
+    else                                      { hS = 'Below limit'; hC = 'bad'; hasHardStop = true; }
+  } else if (humidity > L.humidMax) {
+    if (humidity - L.humidMax <= WB.humidity) { hS = 'Slightly above limit'; hC = 'warn'; hasWarning = true; }
+    else                                      { hS = 'Above limit'; hC = 'bad'; hasHardStop = true; }
+  } else { hS = 'Within limit'; hC = 'safe'; }
   factors.push({ name: 'Humidity', val: humidity + '%',
     sub: `Limit: ${L.humidMin}–${L.humidMax}%`, status: hS, cls: hC });
 
@@ -1539,9 +1551,13 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
   let tS, tC;
   if (tempF <= HARD.tempAbsMin || tempF >= HARD.tempAbsMax) {
     tS = tempF <= HARD.tempAbsMin ? 'Hard stop — freezing' : 'Hard stop — heat'; tC = 'bad'; hasHardStop = true;
-  } else if (tempF < L.tempMin)     { tS = 'Below selected range'; tC = 'warn'; hasWarning = true; }
-  else if (tempF > L.tempMax)       { tS = 'Above selected range'; tC = 'warn'; hasWarning = true; }
-  else                              { tS = 'Within limit'; tC = 'safe'; }
+  } else if (tempF < L.tempMin) {
+    if (L.tempMin - tempF <= WB.temp) { tS = 'Slightly below limit'; tC = 'warn'; hasWarning = true; }
+    else                              { tS = 'Below limit'; tC = 'bad'; hasHardStop = true; }
+  } else if (tempF > L.tempMax) {
+    if (tempF - L.tempMax <= WB.temp) { tS = 'Slightly above limit'; tC = 'warn'; hasWarning = true; }
+    else                              { tS = 'Above limit'; tC = 'bad'; hasHardStop = true; }
+  } else { tS = 'Within limit'; tC = 'safe'; }
   factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
     sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
 
@@ -1552,9 +1568,13 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
     dS = 'Unavailable'; dC = 'warn'; hasWarning = true;
   } else if (deltaT <= HARD.deltaTAbsMin || deltaT >= HARD.deltaTAbsMax) {
     dS = deltaT <= HARD.deltaTAbsMin ? 'Hard stop — inversion/no evaporation' : 'Hard stop — evaporation'; dC = 'bad'; hasHardStop = true;
-  } else if (deltaT < L.deltaTMin)  { dS = 'Below selected range'; dC = 'warn'; hasWarning = true; }
-  else if (deltaT > L.deltaTMax)    { dS = 'Above selected range'; dC = 'warn'; hasWarning = true; }
-  else                              { dS = 'Within limit'; dC = 'safe'; }
+  } else if (deltaT < L.deltaTMin) {
+    if (L.deltaTMin - deltaT <= WB.deltaT) { dS = 'Slightly below limit'; dC = 'warn'; hasWarning = true; }
+    else                                   { dS = 'Below limit'; dC = 'bad'; hasHardStop = true; }
+  } else if (deltaT > L.deltaTMax) {
+    if (deltaT - L.deltaTMax <= WB.deltaT) { dS = 'Slightly above limit'; dC = 'warn'; hasWarning = true; }
+    else                                   { dS = 'Above limit'; dC = 'bad'; hasHardStop = true; }
+  } else { dS = 'Within limit'; dC = 'safe'; }
   const deltaTVal = isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°F' : '--';
   const deltaTSub = deltaTReading
     ? `Air: ${deltaTReading.tempF.toFixed(1)}°F · Wet bulb: ${deltaTReading.wetBulbF.toFixed(1)}°F · Limit: ${L.deltaTMin}–${L.deltaTMax}°F`
