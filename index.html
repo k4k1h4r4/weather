@@ -1139,9 +1139,9 @@ body {
       </table>
     </div>
     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.75rem; display:flex; gap:16px; flex-wrap:wrap;">
-      <span><span style="display:inline-block;width:10px;height:10px;background:#EAF5D4;border:1px solid #3B6B1A;border-radius:2px;margin-right:4px;"></span>Good window</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#FFF8E6;border:1px solid var(--warn);border-radius:2px;margin-right:4px;"></span>Marginal</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#FEF0EC;border:1px solid var(--danger);border-radius:2px;margin-right:4px;"></span>Do not spray</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#86EFAC;border:1px solid #16A34A;border-radius:2px;margin-right:4px;"></span>Good window</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FCD34D;border:1px solid #D97706;border-radius:2px;margin-right:4px;"></span>Marginal</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FCA5A5;border:1px solid #DC2626;border-radius:2px;margin-right:4px;"></span>Do not spray</span>
     </div>
   </div>
 
@@ -1655,12 +1655,10 @@ function renderHourly(fc, omForecast) {
     const { factors, vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
     const factorClass = Object.fromEntries(factors.map(f => [f.name, f.cls]));
 
-    const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
-
     const timeStr = new Date(h.time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
-    return `<tr class="${rowClass}">
-      <td style="font-family:var(--font-mono); font-size:0.72rem;">${timeStr}</td>
+    return `<tr>
+      <td class="metric-cell metric-${vClass}" style="font-family:var(--font-mono); font-size:0.72rem;">${timeStr}</td>
       <td class="metric-cell metric-${factorClass['Temperature']}">${tempF.toFixed(0)}°</td>
       <td class="metric-cell metric-${factorClass['Wind speed']}">${windMph.toFixed(1)}</td>
       <td class="metric-cell metric-${factorClass['Delta T']}" style="font-family:var(--font-mono);">${isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°' : '--'}</td>
