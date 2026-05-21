@@ -310,6 +310,23 @@ body {
   border: 1px solid var(--border);
   background: var(--bg-deep);
 }
+.factor-tile.factor-safe {
+  background: #EAF5D4;
+  border-color: rgba(59,107,26,0.45);
+}
+.factor-tile.factor-warn {
+  background: #FFF8E6;
+  border-color: rgba(200,120,32,0.5);
+}
+.factor-tile.factor-bad {
+  background: #FEF0EC;
+  border-color: rgba(196,64,26,0.55);
+}
+.factor-tile.factor-safe .factor-name,
+.factor-tile.factor-warn .factor-name,
+.factor-tile.factor-bad .factor-name {
+  color: var(--text-mid);
+}
 .factor-name {
   font-family: var(--font-mono);
   font-size: 0.62rem;
@@ -384,6 +401,13 @@ body {
 .hourly-table tr.best-window { background: #EAF5D4; }
 .hourly-table tr.bad-window { background: #FEF0EC; }
 .hourly-table tr.warn-window { background: #FFF8E6; }
+.hourly-table td.metric-cell {
+  color: var(--soil);
+  font-weight: 600;
+}
+.hourly-table td.metric-safe { background: #EAF5D4; }
+.hourly-table td.metric-warn { background: #FFF8E6; }
+.hourly-table td.metric-bad { background: #FEF0EC; }
 
 /* ── ET DEFICIT ──────────────────────────────────────────── */
 .deficit-summary {
@@ -738,6 +762,132 @@ body {
 }
 .info-box.visible { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .header {
+    padding: 1rem 0.75rem 0.9rem;
+  }
+  .header-inner {
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+  .header-title {
+    font-size: 1.45rem;
+  }
+  .header-meta {
+    width: 100%;
+    text-align: left;
+  }
+  .setup-wrap,
+  .main-wrap {
+    width: 100%;
+    max-width: none;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .mobile-nav {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 0.4rem;
+    margin: -0.5rem -0.5rem 1rem;
+    padding: 0.5rem;
+    overflow-x: auto;
+    background: rgba(250,246,238,0.96);
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-nav a {
+    flex: 0 0 auto;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--soil-mid);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .card,
+  .limits-panel,
+  .crop-selector-panel {
+    border-radius: 8px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .section-mb {
+    margin-bottom: 1rem;
+  }
+  .conditions-grid,
+  .factor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .forecast-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .crop-selector-panel {
+    display: block;
+  }
+  .crop-selector-label,
+  .crop-kc-note {
+    display: block;
+    margin: 0 0 0.5rem;
+    white-space: normal;
+  }
+  .crop-btn-group {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .crop-btn-group::-webkit-scrollbar {
+    display: none;
+  }
+  .crop-btn {
+    flex: 0 0 auto;
+  }
+  .setup-card {
+    max-width: none;
+    padding: 1.25rem;
+  }
+  .setup-row {
+    flex-direction: column;
+  }
+  .card-title {
+    flex-wrap: wrap;
+  }
+  .hourly-wrap {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .setup-wrap,
+  .main-wrap {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+  .card,
+  .limits-panel,
+  .crop-selector-panel {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+}
 </style>
 </head>
 <body>
@@ -777,8 +927,18 @@ body {
 <!-- MAIN DASHBOARD -->
 <div class="main-wrap" id="main-wrap">
 
+  <nav class="mobile-nav" aria-label="Dashboard sections">
+    <a href="#current-section">Now</a>
+    <a href="#forecast-section">Forecast</a>
+    <a href="#deficit-section">Deficit</a>
+    <a href="#et-section">ET</a>
+    <a href="#spray-limits-panel">Limits</a>
+    <a href="#spray-now-section">Spray</a>
+    <a href="#hourly-section">Hourly</a>
+  </nav>
+
   <!-- Current conditions -->
-  <div class="section-mb">
+  <div class="section-mb" id="current-section">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
       <div class="section-label" style="margin-bottom:0; border:none;">Current conditions</div>
       <button class="refresh-btn" onclick="initLoad()">↻ Refresh</button>
@@ -801,7 +961,7 @@ body {
   </div>
 
   <!-- 7-day ET forecast -->
-  <div class="card section-mb">
+  <div class="card section-mb" id="forecast-section">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--clay)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       7-Day ET Forecast &amp; Spray Outlook — <span id="forecast-crop-label">Reference ET₀</span>
@@ -818,7 +978,7 @@ body {
   </div>
 
   <!-- ET Deficit -->
-  <div class="card section-mb">
+  <div class="card section-mb" id="deficit-section">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sky)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6M12 16h.01"/></svg>
       Irrigation Deficit — Last 7 Days — <span id="deficit-crop-label">Reference ET₀</span>
@@ -845,7 +1005,7 @@ body {
   </div>
 
   <!-- Crop Water Demand (ET) — collapsible -->
-  <div class="card section-mb">
+  <div class="card section-mb" id="et-section">
     <div class="card-title" style="cursor:pointer; user-select:none;" onclick="toggleET()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M12 2C6 2 2 8 2 12c0 5.5 4.5 10 10 10s10-4.5 10-10C22 8 18 2 12 2z"/><path d="M12 2v20M2 12h20"/></svg>
       Crop Water Demand (ET) — Today
@@ -939,35 +1099,34 @@ body {
   </div>
 
   <!-- Spray window now -->
-  <div class="card section-mb">
+  <div class="card section-mb" id="spray-now-section">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--leaf-mid)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       Spray Window — Right Now
       <button class="info-btn" onclick="toggleInfo('info-spraynow')" title="More information">?</button>
     </div>
     <div class="info-box" id="info-spraynow">
-      Checks four conditions against your current limit settings and gives a single go/no-go answer. <strong>Wind:</strong> below your min risks temperature inversions that trap and drift chemical; above your max causes physical off-target drift. <strong>Humidity:</strong> too low and droplets evaporate before reaching the leaf; too high and product won't dry or may run off. <strong>Temperature:</strong> below your min slows plant absorption; above your max causes volatile herbicides (especially auxins like dicamba/2,4-D) to turn to vapor and drift. <strong>Precipitation:</strong> any active rain washes product off before it can work.
+      Checks five conditions against your current limit settings and gives a single go/no-go answer. <strong>Wind:</strong> below your min risks temperature inversions that trap and drift chemical; above your max causes physical off-target drift. <strong>Humidity:</strong> too low and droplets evaporate before reaching the leaf; too high and product won't dry or may run off. <strong>Temperature:</strong> below your min slows plant absorption; above your max causes volatile herbicides (especially auxins like dicamba/2,4-D) to turn to vapor and drift. <strong>Delta T:</strong> outside the window increases inversion or evaporation risk. <strong>Precipitation:</strong> any active rain washes product off before it can work.
     </div>
     <div class="factor-grid" id="factor-grid"></div>
     <div id="spray-verdict"></div>
   </div>
 
   <!-- Hourly spray -->
-  <div class="card section-mb">
+  <div class="card section-mb" id="hourly-section">
     <div class="card-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       Hourly Spray Windows — Next 24 Hours
       <button class="info-btn" onclick="toggleInfo('info-hourly')" title="More information">?</button>
     </div>
     <div class="info-box" id="info-hourly">
-      Each row is evaluated against your spray limit settings. Early morning hours typically offer the best windows — wind is usually lightest, humidity is moderate, and temperatures haven't climbed yet. Green rows meet all your limits. Yellow rows have one marginal factor worth monitoring. Red rows have at least one condition outside your safe range — do not spray.
+      Each row is evaluated against your spray limit settings. Green means within range, yellow means just outside your selected limits, and red means a hard stop.
     </div>
     <div class="hourly-wrap">
       <table class="hourly-table" id="hourly-table">
         <thead>
           <tr>
             <th>Time</th>
-            <th>Spray window</th>
             <th>Temp °F</th>
             <th>Wind mph</th>
             <th>Delta T °F</th>
@@ -1356,31 +1515,32 @@ function resetLimits() {
 function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
   const L = sprayLimits;
   const factors = [];
-  let outOfLimit = false;  // Track if ANY metric is outside its defined limit
+  let hasWarning = false;
+  let hasHardStop = false;
 
   // Wind
   let wS, wC;
-  if (windMph > HARD.windAbsMax)    { wS = 'Too windy — do not spray'; wC = 'bad'; outOfLimit = true; }
-  else if (windMph > L.windMax)     { wS = 'Above limit — drift risk'; wC = 'bad'; outOfLimit = true; }
-  else if (windMph < L.windMin)     { wS = 'Below limit — inversion risk'; wC = 'bad'; outOfLimit = true; }
+  if (windMph >= HARD.windAbsMax)   { wS = 'Hard stop — wind'; wC = 'bad'; hasHardStop = true; }
+  else if (windMph > L.windMax)     { wS = 'Above selected range'; wC = 'warn'; hasWarning = true; }
+  else if (windMph < L.windMin)     { wS = 'Below selected range'; wC = 'warn'; hasWarning = true; }
   else                              { wS = 'Within limit'; wC = 'safe'; }
   factors.push({ name: 'Wind speed', val: windMph.toFixed(1) + ' mph',
     sub: `Limit: ${L.windMin}–${L.windMax} mph`, status: wS, cls: wC });
 
   // Humidity
   let hS, hC;
-  if (humidity < L.humidMin)        { hS = 'Below limit — volatilization risk'; hC = 'bad'; outOfLimit = true; }
-  else if (humidity > L.humidMax)   { hS = 'Above limit — poor drying'; hC = 'bad'; outOfLimit = true; }
+  if (humidity < L.humidMin)        { hS = 'Below selected range'; hC = 'warn'; hasWarning = true; }
+  else if (humidity > L.humidMax)   { hS = 'Above selected range'; hC = 'warn'; hasWarning = true; }
   else                              { hS = 'Within limit'; hC = 'safe'; }
   factors.push({ name: 'Humidity', val: humidity + '%',
     sub: `Limit: ${L.humidMin}–${L.humidMax}%`, status: hS, cls: hC });
 
   // Temp
   let tS, tC;
-  if (tempF < HARD.tempAbsMin || tempF > HARD.tempAbsMax) {
-    tS = tempF < HARD.tempAbsMin ? 'Freezing — do not spray' : 'Extreme heat — do not spray'; tC = 'bad'; outOfLimit = true;
-  } else if (tempF < L.tempMin)     { tS = 'Below limit — poor absorption'; tC = 'bad'; outOfLimit = true; }
-  else if (tempF > L.tempMax)       { tS = 'Above limit — volatilization'; tC = 'bad'; outOfLimit = true; }
+  if (tempF <= HARD.tempAbsMin || tempF >= HARD.tempAbsMax) {
+    tS = tempF <= HARD.tempAbsMin ? 'Hard stop — freezing' : 'Hard stop — heat'; tC = 'bad'; hasHardStop = true;
+  } else if (tempF < L.tempMin)     { tS = 'Below selected range'; tC = 'warn'; hasWarning = true; }
+  else if (tempF > L.tempMax)       { tS = 'Above selected range'; tC = 'warn'; hasWarning = true; }
   else                              { tS = 'Within limit'; tC = 'safe'; }
   factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
     sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
@@ -1389,11 +1549,11 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
   const deltaT = deltaTReading?.deltaT;
   let dS, dC;
   if (!isFiniteNumber(deltaT)) {
-    dS = 'Unavailable'; dC = 'bad'; outOfLimit = true;
+    dS = 'Unavailable'; dC = 'warn'; hasWarning = true;
   } else if (deltaT <= HARD.deltaTAbsMin || deltaT >= HARD.deltaTAbsMax) {
-    dS = deltaT <= HARD.deltaTAbsMin ? 'Avoid — inversion/no evaporation' : 'Avoid — extreme evaporation'; dC = 'bad'; outOfLimit = true;
-  } else if (deltaT < L.deltaTMin)  { dS = 'Below limit — poor drying'; dC = 'bad'; outOfLimit = true; }
-  else if (deltaT > L.deltaTMax)    { dS = 'Above limit — fast evaporation'; dC = 'bad'; outOfLimit = true; }
+    dS = deltaT <= HARD.deltaTAbsMin ? 'Hard stop — inversion/no evaporation' : 'Hard stop — evaporation'; dC = 'bad'; hasHardStop = true;
+  } else if (deltaT < L.deltaTMin)  { dS = 'Below selected range'; dC = 'warn'; hasWarning = true; }
+  else if (deltaT > L.deltaTMax)    { dS = 'Above selected range'; dC = 'warn'; hasWarning = true; }
   else                              { dS = 'Within limit'; dC = 'safe'; }
   const deltaTVal = isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°F' : '--';
   const deltaTSub = deltaTReading
@@ -1404,17 +1564,19 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
 
   // Precip (no slider — fixed)
   let pS, pC;
-  if (precipIn > 0.1)               { pS = 'Active precip — avoid'; pC = 'bad'; outOfLimit = true; }
-  else if (precipIn > 0)            { pS = 'Light precip — caution'; pC = 'warn'; }
+  if (precipIn > 0.1)               { pS = 'Hard stop — precipitation'; pC = 'bad'; hasHardStop = true; }
+  else if (precipIn > 0)            { pS = 'Trace precipitation'; pC = 'warn'; hasWarning = true; }
   else                              { pS = 'No precip'; pC = 'safe'; }
   factors.push({ name: 'Precipitation', val: precipIn.toFixed(2) + ' in',
-    sub: 'Any rain = avoid', status: pS, cls: pC });
+    sub: 'Trace rain: marginal; >0.10 in: hard stop', status: pS, cls: pC });
 
-  // Verdict: if ANY limit is exceeded, DO NOT SPRAY
   let verdict, vClass;
-  if (outOfLimit) {
-    verdict = 'Do not spray — outside application limits';
+  if (hasHardStop) {
+    verdict = 'Do not spray — hard stop condition present';
     vClass = 'bad';
+  } else if (hasWarning) {
+    verdict = 'Marginal spray window — review yellow criteria';
+    vClass = 'warn';
   } else {
     verdict = 'Conditions within your spray window — proceed';
     vClass = 'safe';
@@ -1426,11 +1588,10 @@ function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
 function renderSprayNow(windMph, humidity, tempF, precipIn, deltaTReading) {
   const { factors, verdict, vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
   document.getElementById('factor-grid').innerHTML = factors.map(f => `
-    <div class="factor-tile">
+    <div class="factor-tile factor-${f.cls}" title="${f.status}">
       <div class="factor-name">${f.name}</div>
       <div class="factor-val">${f.val}</div>
       <div style="font-size:0.65rem; color:var(--text-muted); margin-top:1px;">${f.sub}</div>
-      <span class="badge badge-${f.cls}">${f.status}</span>
     </div>`).join('');
   const icons = { safe: '✓', warn: '⚠', bad: '✕' };
   document.getElementById('spray-verdict').innerHTML = `
@@ -1471,21 +1632,20 @@ function renderHourly(fc, omForecast) {
     const precipIn = h.precip_in;
     const deltaTReading = deltaTByTime.get(openMeteoHourKey(h.time));
     const deltaT = deltaTReading?.deltaT;
-    const { vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
+    const { factors, vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
+    const factorClass = Object.fromEntries(factors.map(f => [f.name, f.cls]));
 
     const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
-    const label = vClass === 'safe' ? '✓ Good' : vClass === 'bad' ? '✕ Avoid' : '⚠ Marginal';
 
     const timeStr = new Date(h.time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return `<tr class="${rowClass}">
       <td style="font-family:var(--font-mono); font-size:0.72rem;">${timeStr}</td>
-      <td style="font-weight:600; font-size:0.78rem;">${label}</td>
-      <td>${tempF.toFixed(0)}°</td>
-      <td>${windMph.toFixed(1)}</td>
-      <td style="font-family:var(--font-mono); font-weight:600;">${isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°' : '--'}</td>
-      <td>${humidity}%</td>
-      <td>${precipIn.toFixed(2)}</td>
+      <td class="metric-cell metric-${factorClass['Temperature']}">${tempF.toFixed(0)}°</td>
+      <td class="metric-cell metric-${factorClass['Wind speed']}">${windMph.toFixed(1)}</td>
+      <td class="metric-cell metric-${factorClass['Delta T']}" style="font-family:var(--font-mono);">${isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°' : '--'}</td>
+      <td class="metric-cell metric-${factorClass['Humidity']}">${humidity}%</td>
+      <td class="metric-cell metric-${factorClass['Precipitation']}">${precipIn.toFixed(2)}</td>
       <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
 
     </tr>`;
