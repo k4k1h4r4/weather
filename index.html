@@ -866,7 +866,7 @@ body {
       <button class="info-btn" onclick="toggleInfo('info-limits')" title="More information" style="margin-left:6px;">?</button>
     </div>
     <div class="info-box" id="info-limits">
-      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, temperature, and Delta T limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. Delta T (air temperature minus wet bulb temperature) reflects evaporation risk: 4–14°F is ideal, <4°F indicates high humidity and droplets do not evaporate at all, 14-18°F has high evaporation risk, as the air has become quite dry, and conditions are marginal, >18°F indicates excessive evaporation, and you should NOT spray. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F, Delta T ≤0°F or ≥10°F) are enforced regardless of slider position.
+      Adjust these sliders to match your chemical label's application requirements. Wind, humidity, temperature, and Delta T limits vary by product — a contact herbicide has a wider window than a volatile auxin like dicamba or 2,4-D. Delta T (air temperature minus wet bulb temperature) reflects evaporation risk: 4–14°F is ideal, <4°F indicates high humidity and droplets do not evaporate at all, 14-18°F has high evaporation risk, as the air has become quite dry, and conditions are marginal, >18°F indicates excessive evaporation, and you should NOT spray. The green fill shows your acceptable range. Changes apply instantly to the Spray Window and Hourly table below. Hard stops (wind ≥15 mph, temp ≤32°F or ≥95°F, Delta T ≤0°F or ≥18°F) are enforced regardless of slider position.
     </div>
     <div class="limits-grid">
 
@@ -987,7 +987,7 @@ body {
   </div>
 
   <div style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); padding-top:1rem; border-top:1px solid var(--border);">
-    Current conditions &amp; hourly: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; ET forecast &amp; historical deficit: Open-Meteo (ERA5) &nbsp;·&nbsp; FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE &nbsp;·&nbsp; US customary units
+    Current conditions &amp; hourly: WeatherAPI.com via Cloudflare Worker &nbsp;·&nbsp; Delta T, ET forecast &amp; historical deficit: Open-Meteo &nbsp;·&nbsp; FAO-56 Penman-Monteith &nbsp;·&nbsp; Gering, NE &nbsp;·&nbsp; US customary units
   </div>
 
 </div><!-- /main-wrap -->
@@ -1013,6 +1013,8 @@ function omDateStr(d) {
 function fetchOpenMeteoForecast() {
   const url = `https://api.open-meteo.com/v1/forecast`
     + `?latitude=${OM_LAT}&longitude=${OM_LON}`
+    + `&current=temperature_2m,wet_bulb_temperature_2m`
+    + `&hourly=temperature_2m,wet_bulb_temperature_2m`
     + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,`
     + `windspeed_10m_max,et0_fao_evapotranspiration,precipitation_probability_max`
     + `&wind_speed_unit=mph&precipitation_unit=inch&temperature_unit=fahrenheit`
@@ -1027,6 +1029,7 @@ function fetchOpenMeteoHistory() {
   const url = `https://archive-api.open-meteo.com/v1/archive`
     + `?latitude=${OM_LAT}&longitude=${OM_LON}`
     + `&start_date=${omDateStr(start)}&end_date=${omDateStr(end)}`
+    + `&hourly=temperature_2m,wet_bulb_temperature_2m`
     + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,`
     + `windspeed_10m_max,et0_fao_evapotranspiration`
     + `&wind_speed_unit=mph&precipitation_unit=inch&temperature_unit=fahrenheit`
@@ -1035,26 +1038,42 @@ function fetchOpenMeteoHistory() {
 }
 
 /* ── DELTA T CALCULATION (Air Temp - Wet Bulb Temp) ──────────── */
-function calculateWetBulb(tempF, relativeHumidity) {
-  // Convert F to C for calculation
-  const tempC = (tempF - 32) * 5 / 9;
-  const RH = relativeHumidity / 100;
-  
-  // Magnus formula approximation for wet bulb
-  const wetBulbC = tempC * Math.atan(0.151977 * Math.sqrt(RH + 8.313659))
-    + Math.atan(tempC + Math.atan(0.151977 * Math.sqrt(RH + 8.313659)))
-    - Math.atan(Math.atan(0.151977 * Math.sqrt(RH + 8.313659)) - 1.676331)
-    + 0.00391838 * Math.pow(RH, 1.5) * Math.atan(0.023101 * RH)
-    - 4.686035;
-  
-  // Convert back to F
-  return (wetBulbC * 9 / 5) + 32;
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
-function calculateDeltaT(tempF, relativeHumidity) {
-  // Delta T = Air Temperature - Wet Bulb Temperature
-  const wetBulbF = calculateWetBulb(tempF, relativeHumidity);
-  return tempF - wetBulbF;
+function buildDeltaTReading(tempF, wetBulbF) {
+  if (!isFiniteNumber(tempF) || !isFiniteNumber(wetBulbF)) return null;
+  return {
+    tempF,
+    wetBulbF,
+    deltaT: tempF - wetBulbF,
+  };
+}
+
+function getCurrentDeltaTReading(omForecast) {
+  return buildDeltaTReading(
+    omForecast?.current?.temperature_2m,
+    omForecast?.current?.wet_bulb_temperature_2m
+  );
+}
+
+function buildHourlyDeltaTMap(omForecast) {
+  const map = new Map();
+  const hourly = omForecast?.hourly;
+  const times = hourly?.time || [];
+  times.forEach((time, i) => {
+    const reading = buildDeltaTReading(
+      hourly.temperature_2m?.[i],
+      hourly.wet_bulb_temperature_2m?.[i]
+    );
+    if (reading) map.set(time, reading);
+  });
+  return map;
+}
+
+function openMeteoHourKey(weatherApiTime) {
+  return weatherApiTime ? weatherApiTime.replace(' ', 'T').slice(0, 13) + ':00' : '';
 }
 
 function getDeltaTStatus(deltaT) {
@@ -1115,8 +1134,8 @@ function renderAll(data, omForecast, omHistory) {
 
   const et0 = pm(c.temp_c, c.humidity, c.wind_mph, c.pressure_mb, c.uv, dewC);
   renderET(et0);
-  renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
-  renderHourly(fc);
+  renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in, getCurrentDeltaTReading(omForecast));
+  renderHourly(fc, omForecast);
   render7DayET(omForecast);
   renderDeficit(omHistory);
 }
@@ -1283,8 +1302,8 @@ function onLimitChange() {
 
   if (cachedData) {
     const c = cachedData.current;
-    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
-    renderHourly(cachedData.forecast.forecastday);
+    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in, getCurrentDeltaTReading(cachedOMForecast));
+    renderHourly(cachedData.forecast.forecastday, cachedOMForecast);
   }
 }
 
@@ -1328,13 +1347,13 @@ function resetLimits() {
   updateSliderUI();
   if (cachedData) {
     const c = cachedData.current;
-    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in);
-    renderHourly(cachedData.forecast.forecastday);
+    renderSprayNow(c.wind_mph, c.humidity, c.temp_f, c.precip_in, getCurrentDeltaTReading(cachedOMForecast));
+    renderHourly(cachedData.forecast.forecastday, cachedOMForecast);
   }
 }
 
 /* ── SPRAY NOW ───────────────────────────────────────────── */
-function sprayScore(windMph, humidity, tempF, precipIn) {
+function sprayScore(windMph, humidity, tempF, precipIn, deltaTReading) {
   const L = sprayLimits;
   const factors = [];
   let outOfLimit = false;  // Track if ANY metric is outside its defined limit
@@ -1366,16 +1385,22 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   factors.push({ name: 'Temperature', val: tempF.toFixed(0) + '°F',
     sub: `Limit: ${L.tempMin}–${L.tempMax}°F`, status: tS, cls: tC });
 
-  // Delta T (Air Temp - Wet Bulb Temp)
-  const deltaT = calculateDeltaT(tempF, humidity);
+  // Delta T from Open-Meteo air temp and wet bulb temp, both in Fahrenheit.
+  const deltaT = deltaTReading?.deltaT;
   let dS, dC;
-  if (deltaT <= HARD.deltaTAbsMin || deltaT >= HARD.deltaTAbsMax) {
+  if (!isFiniteNumber(deltaT)) {
+    dS = 'Unavailable'; dC = 'bad'; outOfLimit = true;
+  } else if (deltaT <= HARD.deltaTAbsMin || deltaT >= HARD.deltaTAbsMax) {
     dS = deltaT <= HARD.deltaTAbsMin ? 'Avoid — inversion/no evaporation' : 'Avoid — extreme evaporation'; dC = 'bad'; outOfLimit = true;
   } else if (deltaT < L.deltaTMin)  { dS = 'Below limit — poor drying'; dC = 'bad'; outOfLimit = true; }
   else if (deltaT > L.deltaTMax)    { dS = 'Above limit — fast evaporation'; dC = 'bad'; outOfLimit = true; }
   else                              { dS = 'Within limit'; dC = 'safe'; }
-  factors.push({ name: 'Delta T', val: deltaT.toFixed(1) + '°F',
-    sub: `Limit: ${L.deltaTMin}–${L.deltaTMax}°F`, status: dS, cls: dC });
+  const deltaTVal = isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°F' : '--';
+  const deltaTSub = deltaTReading
+    ? `Air: ${deltaTReading.tempF.toFixed(1)}°F · Wet bulb: ${deltaTReading.wetBulbF.toFixed(1)}°F · Limit: ${L.deltaTMin}–${L.deltaTMax}°F`
+    : `Wet bulb unavailable · Limit: ${L.deltaTMin}–${L.deltaTMax}°F`;
+  factors.push({ name: 'Delta T', val: deltaTVal,
+    sub: deltaTSub, status: dS, cls: dC });
 
   // Precip (no slider — fixed)
   let pS, pC;
@@ -1398,8 +1423,8 @@ function sprayScore(windMph, humidity, tempF, precipIn) {
   return { factors, verdict, vClass };
 }
 
-function renderSprayNow(windMph, humidity, tempF, precipIn) {
-  const { factors, verdict, vClass } = sprayScore(windMph, humidity, tempF, precipIn);
+function renderSprayNow(windMph, humidity, tempF, precipIn, deltaTReading) {
+  const { factors, verdict, vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
   document.getElementById('factor-grid').innerHTML = factors.map(f => `
     <div class="factor-tile">
       <div class="factor-name">${f.name}</div>
@@ -1416,7 +1441,7 @@ function renderSprayNow(windMph, humidity, tempF, precipIn) {
 }
 
 /* ── HOURLY SPRAY ────────────────────────────────────────── */
-function renderHourly(fc) {
+function renderHourly(fc, omForecast) {
   const now = new Date();
   const nowYMDH = now.getFullYear() * 1000000
     + (now.getMonth()+1) * 10000
@@ -1437,14 +1462,16 @@ function renderHourly(fc) {
     });
   });
 
+  const deltaTByTime = buildHourlyDeltaTMap(omForecast);
   const tbody = document.getElementById('hourly-body');
   tbody.innerHTML = hours.map(h => {
     const windMph = h.wind_mph;
     const humidity = h.humidity;
     const tempF = h.temp_f;
     const precipIn = h.precip_in;
-    const deltaT = calculateDeltaT(tempF, humidity);
-    const { vClass } = sprayScore(windMph, humidity, tempF, precipIn);
+    const deltaTReading = deltaTByTime.get(openMeteoHourKey(h.time));
+    const deltaT = deltaTReading?.deltaT;
+    const { vClass } = sprayScore(windMph, humidity, tempF, precipIn, deltaTReading);
 
     const rowClass = vClass === 'safe' ? 'best-window' : vClass === 'bad' ? 'bad-window' : 'warn-window';
     const label = vClass === 'safe' ? '✓ Good' : vClass === 'bad' ? '✕ Avoid' : '⚠ Marginal';
@@ -1456,7 +1483,7 @@ function renderHourly(fc) {
       <td style="font-weight:600; font-size:0.78rem;">${label}</td>
       <td>${tempF.toFixed(0)}°</td>
       <td>${windMph.toFixed(1)}</td>
-      <td style="font-family:var(--font-mono); font-weight:600;">${deltaT.toFixed(1)}°</td>
+      <td style="font-family:var(--font-mono); font-weight:600;">${isFiniteNumber(deltaT) ? deltaT.toFixed(1) + '°' : '--'}</td>
       <td>${humidity}%</td>
       <td>${precipIn.toFixed(2)}</td>
       <td style="font-size:0.72rem; color:var(--text-muted);">${h.condition.text}</td>
